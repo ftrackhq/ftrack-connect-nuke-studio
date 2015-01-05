@@ -141,7 +141,7 @@ class ProcessorPlugin(object):
                 'output_format': data['resolution']
             },
             'OFFSET': {
-                'time_offset': int(data['time_offset'])
+                'time_offset': int(data['time_offset']) + int(data['handles'])
             },
             'root': {
                 'first_frame': int(data['destination_in']),
@@ -171,8 +171,9 @@ class ProcessorPlugin(object):
                 'Missing required IN and OUT nodes.'
             )
 
+        self.logger.debug('Raw data: {0}'.format(data))
         data = self.prepare_data(data)
-        self.logger.info('Running processor with data: {0}'.format(data))
+        self.logger.debug('Prepared data: {0}'.format(data))
 
         self._ensure_attributes(write_node)
         self._apply_options_to_nuke_script(data)
