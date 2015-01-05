@@ -50,6 +50,8 @@ for child in os.listdir(
     if os.path.isdir(os.path.join(RESOURCE_PATH, child)):
         data_files += get_files_from_folder(child)
 
+data_files += get_files_from_folder(RESOURCE_PATH)
+
 
 # Call main setup.
 setup(
