@@ -5,7 +5,7 @@ import functools
 
 import FnAssetAPI
 from FnAssetAPI.ui.toolkit import QtGui
-from ftrack_connect_foundry.ui import delegate
+from ftrack_connect_nuke.ui import delegate
 from ftrack_connect_nuke_studio.ui.create_project import ProjectTreeDialog
 
 
@@ -34,9 +34,9 @@ class Delegate(delegate.Delegate):
         super(Delegate, self).populateUI(uiElement, specification, context)
 
         host = FnAssetAPI.SessionManager.currentSession().getHost()
-        if host and host.getIdentifier() == 'uk.co.foundry.nukestudio': 
+        if host and host.getIdentifier() == 'uk.co.foundry.nukestudio':
             import nuke.assetmgr
-            if context.locale.isOfType(nuke.assetmgr.nukestudiohost.hostAdaptor.NukeStudioHostAdaptor.specifications.HieroTimelineContextMenuLocale):                
+            if context.locale.isOfType(nuke.assetmgr.nukestudiohost.hostAdaptor.NukeStudioHostAdaptor.specifications.HieroTimelineContextMenuLocale):
                 data = context.locale.getData().get('event').sender.selection()
                 cmd = functools.partial(openCreateProjectUI, data)
                 action = QtGui.QAction(QtGui.QPixmap(':icon-ftrack-box'), 'Create Project', uiElement)
