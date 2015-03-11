@@ -90,6 +90,7 @@ setup(
         '#egg=ftrack-connect-0.1.7',
         'https://bitbucket.org/ftrack/ftrack-connect-foundry/get/master.zip'
         '#egg=ftrack-connect-foundry-0.1.0'
+        'https://bitbucket.org/ftrack/ftrack-connect-nuke/get/master.zip'
     ],
     tests_require=[
     ],
