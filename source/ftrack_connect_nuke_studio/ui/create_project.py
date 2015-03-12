@@ -7,6 +7,7 @@ import getpass
 
 import FnAssetAPI.logging
 from FnAssetAPI.ui.toolkit import QtGui, QtCore
+import hiero
 
 from .widget import Resolution, Fps, Workflow
 
@@ -573,6 +574,8 @@ class ProjectTreeDialog(QtGui.QDialog):
             # Gather all the useful informations from the track
             track_in = int(datum.track.source().sourceIn())
             track_out = int(datum.track.source().sourceOut())
+            effects = [effect for effect in datum.track.linkedItems() if isinstance(effect, hiero.core.EffectTrackItem)]
+            FnAssetAPI.logging.info(effects)
 
             if datum.track.source().mediaSource().singleFile():
                 # Adjust frame in and out if the media source is a single file.
