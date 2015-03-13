@@ -28,7 +28,7 @@ from ftrack_connect_nuke_studio.ui.tag_item import TagItem
 from ftrack_connect_nuke_studio.processor import config
 import ftrack_connect_nuke_studio
 from ftrack_connect.ui.theme import applyTheme
-
+from exporter import export
 
 class FTrackServerHelper(object):
     '''Handle interaction with ftrack server.'''
@@ -651,8 +651,13 @@ class ProjectTreeDialog(QtGui.QDialog):
                     processor = self.processors.get(datum.name)
                     print processor
 
+                    script_output_path = export(datum.track)
+                    FnAssetAPI.logging.info('SCRIPT PATH %s' % script_output_path)
+
                     if not processor:
                         continue
+
+
 
                     asset_names = processor.keys()
                     for asset_name in asset_names:
