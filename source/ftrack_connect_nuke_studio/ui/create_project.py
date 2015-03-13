@@ -656,7 +656,6 @@ class ProjectTreeDialog(QtGui.QDialog):
                 FnAssetAPI.logging.info('DATUM:%s' % datum)
 
                 if datum.type == 'task':
-                    FnAssetAPI.logging.info('HERE I AM!!!')
                     processor = self.processors.get(datum.name)
                     if not processor:
                         FnAssetAPI.logging.debug(
@@ -675,10 +674,6 @@ class ProjectTreeDialog(QtGui.QDialog):
                             asset_id, result
                         )
 
-                        FnAssetAPI.logging.info('AI:%s' % asset_id)
-                        FnAssetAPI.logging.info('VI:%s' % version_id)
-
-                        FnAssetAPI.logging.info('EXTRACTING INFO FOR PROCESSOR')
                         for component_name, component_fn in processor[asset_name].items():
                             out_data = {
                                 'resolution': resolution,
