@@ -472,6 +472,13 @@ class ProjectTreeDialog(QtGui.QDialog):
         plugins = ftrack_connect_nuke_studio.PROCESSOR_PLUGINS
         processor = args[0]
         data = args[1]
+
+        track_item = data.get('application_object')
+        FnAssetAPI.logging.info(track_item)
+        if track_item:
+            nuke_script_path = export(track_item)
+            FnAssetAPI.logging.info('RESULT NUKE PATH : %s' % nuke_script_path)
+
         plugin = plugins.get(processor)
         plugin.process(data)
 
@@ -646,13 +653,15 @@ class ProjectTreeDialog(QtGui.QDialog):
                     datum.track.source().setEntityReference(
                         'ftrack://{0}?entityType={1}'.format(result[0], result[1])
                     )
+                FnAssetAPI.logging.info('DATUM:%s' % datum)
 
                 if datum.type == 'task':
+                    FnAssetAPI.logging.info('HERE I AM!!!')
                     processor = self.processors.get(datum.name)
-                    script_output_path = nuke.executeInMainThreadWithResult(export, args=(datum.track))
-                    FnAssetAPI.logging.info('SCRIPT PATH %s' % script_output_path)
-
                     if not processor:
+                        FnAssetAPI.logging.debug(
+                            'No processor available for task: %s' % datum.name
+                        )
                         continue
 
                     asset_names = processor.keys()
@@ -666,6 +675,10 @@ class ProjectTreeDialog(QtGui.QDialog):
                             asset_id, result
                         )
 
+                        FnAssetAPI.logging.info('AI:%s' % asset_id)
+                        FnAssetAPI.logging.info('VI:%s' % version_id)
+
+                        FnAssetAPI.logging.info('EXTRACTING INFO FOR PROCESSOR')
                         for component_name, component_fn in processor[asset_name].items():
                             out_data = {
                                 'resolution': resolution,
@@ -678,9 +691,10 @@ class ProjectTreeDialog(QtGui.QDialog):
                                 'offset': offset,
                                 'asset_version_id': version_id,
                                 'component_name': component_name,
-                                'handles': handles
+                                'handles': handles,
+                                'application_object': datum.track
                             }
-
+                            FnAssetAPI.logging.info(out_data)
                             processor_name = component_fn.getName()
                             data = (processor_name,  out_data)
                             self.processor_ready.emit(data)
