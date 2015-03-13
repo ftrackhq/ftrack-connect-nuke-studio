@@ -5,6 +5,7 @@ import tempfile
 import ftrack
 import getpass
 import hiero
+import nuke
 
 import FnAssetAPI.logging
 from FnAssetAPI.ui.toolkit import QtGui, QtCore
@@ -647,17 +648,12 @@ class ProjectTreeDialog(QtGui.QDialog):
                     )
 
                 if datum.type == 'task':
-                    print datum.name
                     processor = self.processors.get(datum.name)
-                    print processor
-
-                    script_output_path = export(datum.track)
+                    script_output_path = nuke.executeInMainThreadWithResult(export, args=(datum.track))
                     FnAssetAPI.logging.info('SCRIPT PATH %s' % script_output_path)
 
                     if not processor:
                         continue
-
-
 
                     asset_names = processor.keys()
                     for asset_name in asset_names:
