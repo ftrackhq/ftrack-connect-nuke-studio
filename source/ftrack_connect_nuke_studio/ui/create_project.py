@@ -475,6 +475,7 @@ class ProjectTreeDialog(QtGui.QDialog):
 
         track_item = data.get('application_object')
         FnAssetAPI.logging.info(track_item)
+        nuke_script_path = None
         if track_item:
             nuke_script_path = export(track_item)
             FnAssetAPI.logging.info('RESULT NUKE PATH : %s' % nuke_script_path)
@@ -483,6 +484,11 @@ class ProjectTreeDialog(QtGui.QDialog):
             # AND LET IT RENDER IT OUT.
 
         plugin = plugins.get(processor)
+        if nuke_script_path:
+            # inject the script in the processor
+            # restrict to one only for test purposes
+            plugin.script = nuke_script_path.get('comp')
+
         plugin.process(data)
 
     def on_set_tree_root(self):
