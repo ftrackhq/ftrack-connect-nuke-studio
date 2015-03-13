@@ -7,9 +7,10 @@ OriginalScriptWriter = hiero.core.nuke.ScriptWriter
 
 class CustomScriptWriter(OriginalScriptWriter):
 
-  def __init__(self):
+  def __init__(self, entity_reference):
     OriginalScriptWriter.__init__(self)
     self.result_outputs = {}
+    self.entity_reference = entity_reference
 
 
   def addNode(self, node):
@@ -35,8 +36,8 @@ class CustomScriptWriter(OriginalScriptWriter):
     if node.type() == "Read":
       # print "CustomScriptWriter Read node added:", node.knob("file")
       # Replace the path with a Python expression
-      newFileKnobValue = "\\[python str('%s')\\]" %  node.knob("file")
-      node.setKnob("file", newFileKnobValue)
+      # newFileKnobValue = "\\[python str('%s')\\]" %  node.knob("file")
+      node.setKnob("file", self.entity_reference)
 
     elif node.type() == "Write":
       # print "CustomScriptWriter Write node added:", node.knob("file")
@@ -69,9 +70,14 @@ def export(trackItem, presetName="Basic Nuke Shot With Annotations"):
   project = trackItem.project()
   project.setProjectRoot( tempfile.tempdir )
 
-  # Replace the default ScriptWriter
-  hiero.core.nuke.ScriptWriter = CustomScriptWriter
+  # get the entity reference to be used in the read node
+  entity_reference =  trackItem.source().entityReference()
 
+  def wrapCustomScriptWriter(*args, **kwargs):
+    return CustomScriptWriter(entity_reference=entity_reference)
+
+  # Replace the default ScriptWriter
+  hiero.core.nuke.ScriptWriter = wrapCustomScriptWriter
   # Export the trackItem
   hiero.core.taskRegistry.createAndExecuteProcessor(
     current_preset,
