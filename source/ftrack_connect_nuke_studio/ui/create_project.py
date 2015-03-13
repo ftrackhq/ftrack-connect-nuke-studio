@@ -478,6 +478,9 @@ class ProjectTreeDialog(QtGui.QDialog):
         if track_item:
             nuke_script_path = export(track_item)
             FnAssetAPI.logging.info('RESULT NUKE PATH : %s' % nuke_script_path)
+            data.pop('application_object')
+            # FROM HERE THE RESULT SCRIPT SHOULD BE PASSET TO PROCESSOR.script
+            # AND LET IT RENDER IT OUT.
 
         plugin = plugins.get(processor)
         plugin.process(data)
