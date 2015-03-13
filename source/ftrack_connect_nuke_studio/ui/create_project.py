@@ -28,7 +28,7 @@ from ftrack_connect_nuke_studio.ui.tag_item import TagItem
 from ftrack_connect_nuke_studio.processor import config
 import ftrack_connect_nuke_studio
 from ftrack_connect.ui.theme import applyTheme
-from exporter import export
+from ftrack_connect_nuke_studio.exporter import export
 
 class FTrackServerHelper(object):
     '''Handle interaction with ftrack server.'''
