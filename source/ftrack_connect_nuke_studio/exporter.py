@@ -1,3 +1,4 @@
+import os
 import hiero.core
 import tempfile
 import FnAssetAPI
@@ -48,8 +49,8 @@ class CustomScriptWriter(OriginalScriptWriter):
 
   def writeToDisk(self, scriptFilename):
     """ Write the script. """
-    FnAssetAPI.logging.info('SCRIPT NAME %s' % scriptFilename)
-    self.result_outputs['script'] = scriptFilename
+    key = os.path.splitext(os.path.basename(scriptFilename))[0].split('_')[-2]
+    self.result_outputs[key] = scriptFilename
     OriginalScriptWriter.writeToDisk(self, scriptFilename)
 
 
@@ -71,9 +72,8 @@ def export(trackItem, presetName="Basic Nuke Shot With Annotations"):
   # get the entity reference to be used in the read node
   entity_reference =  trackItem.source().entityReference()
 
-  script_writer = CustomScriptWriter
   def wrapCustomScriptWriter(*args, **kwargs):
-    return script_writer(entity_reference=entity_reference)
+    return CustomScriptWriter(entity_reference=entity_reference)
 
   # Replace the default ScriptWriter
   hiero.core.nuke.ScriptWriter = wrapCustomScriptWriter
@@ -84,7 +84,8 @@ def export(trackItem, presetName="Basic Nuke Shot With Annotations"):
     synchronous=True
   )
 
-  script_path_result = script_writer.result_outputs['script']
+  script_path_result = CustomScriptWriter.result_outputs
+  FnAssetAPI.logging.info(script_path_result)
   # Restore the default ScriptWriter
   hiero.core.nuke.ScriptWriter = OriginalScriptWriter
 
