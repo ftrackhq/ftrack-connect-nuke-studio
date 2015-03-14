@@ -544,7 +544,6 @@ class ProjectTreeDialog(QtGui.QDialog):
 
         plugin = plugins.get(processor)
         process_id = plugin.process(data)
-        FnAssetAPI.logging.debug('processor {0}'.format(processor))
         if processor == 'processor.publish':
             self._register_background_process(process_id, data, track_item)
 
