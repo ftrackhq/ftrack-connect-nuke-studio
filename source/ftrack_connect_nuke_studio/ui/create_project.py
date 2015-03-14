@@ -250,9 +250,6 @@ class FTrackServerHelper(object):
             return False
 
 
-
-
-
 class ProjectTreeDialog(QtGui.QDialog):
     '''Create project dialog.'''
 
@@ -722,14 +719,10 @@ class ProjectTreeDialog(QtGui.QDialog):
                     datum.track.source().setEntityReference(
                         'ftrack://{0}?entityType={1}'.format(result[0], result[1])
                     )
-                FnAssetAPI.logging.info('DATUM:%s' % datum)
 
                 if datum.type == 'task':
                     processor = self.processors.get(datum.name)
                     if not processor:
-                        FnAssetAPI.logging.debug(
-                            'No processor available for task: %s' % datum.name
-                        )
                         continue
 
                     asset_names = processor.keys()
@@ -758,7 +751,6 @@ class ProjectTreeDialog(QtGui.QDialog):
                                 'handles': handles,
                                 'application_object': datum.track
                             }
-                            FnAssetAPI.logging.info(out_data)
                             processor_name = component_fn.getName()
                             data = (processor_name,  out_data)
                             self.processor_ready.emit(data)
