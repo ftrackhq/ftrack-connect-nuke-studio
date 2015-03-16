@@ -48,9 +48,10 @@ class CustomScriptWriter(OriginalScriptWriter):
         if node.type() == 'Read':
             node.setKnob('file', self._entity_reference)
 
-        elif node.type() == 'Write':
-            newNode = hiero.core.nuke.Node('MyWrite', **node.knobs())
-            node = newNode
+        # :TODO: Handle write node if necessary.
+        # elif node.type() == 'Write':
+        #     newNode = hiero.core.nuke.Node('MyWrite', **node.knobs())
+        #     node = newNode
 
         return node
 
