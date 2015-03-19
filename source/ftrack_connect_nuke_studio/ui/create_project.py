@@ -262,6 +262,7 @@ class ProjectTreeDialog(QtGui.QDialog):
         applyTheme(self, 'integration')
 
         self._background_process_data = dict()
+        self._post_processed_track_items = dict()
         nuke.addAfterBackgroundRender(self._on_background_process_done)
         #: TODO: Consider if these permission checks are required.
         # user_is_allowed = self.server_helper.check_permissions()
@@ -327,7 +328,8 @@ class ProjectTreeDialog(QtGui.QDialog):
         '''Register background process with *id* and *processor_data* for *track_item*'''
         self._background_process_data[id] = dict(
             processor_data=processor_data,
-            track_item=track_item
+            track_item=track_item,
+            post_processed=False
         )
 
     def _on_background_process_done(self, context):
@@ -383,6 +385,24 @@ class ProjectTreeDialog(QtGui.QDialog):
             file=output['annotations'], name='annotations'
         )
         scene_version.publish()
+
+        FnAssetAPI.logging.debug(
+            'Track item {0} done. Status: {1}'.format(
+                track_item, self._post_processed_track_items
+            )
+        )
+        if track_item in self._post_processed_track_items:
+            self._post_processed_track_items[track_item] = True
+            self._check_post_process_complete()
+
+    def _check_post_process_complete(self):
+        if all([
+            data for data in self._post_processed_track_items.values()
+        ]):
+            track_items = self._post_processed_track_items.keys()
+            ftrack_connect_nuke_studio.build_track.build_compositing_script_track(
+                track_items
+            )
 
     def create_ui_widgets(self):
         '''Setup ui for create dialog.'''
@@ -643,6 +663,13 @@ class ProjectTreeDialog(QtGui.QDialog):
     def create_project(self, data, previous=None):
         '''Recursive function to create a new ftrack project on the server.'''
         selected_workflow = self.workflow_combobox.currentText()
+
+
+        for datum in data:
+            #: TODO: Do we need to handle effect track items separately or
+            # are they instances of track item. 
+            self._post_processed_track_items[datum.track] = False
+
         for datum in data:
             # Gather all the useful informations from the track
             track_in = int(datum.track.source().sourceIn())

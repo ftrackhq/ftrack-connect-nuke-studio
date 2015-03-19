@@ -28,25 +28,6 @@ def openCreateProjectUI(*args, **kwargs):
     dialog.exec_()
 
 
-def buildComps(data):
-    '''Build comps from *data*.'''
-    if not data:
-        return
-
-    sequence = data[0].sequence()
-
-    buildComp = ftrack_connect_nuke_studio.build_track.CustomBuild(sequence)
-    buildComp.setTrackItems(data)
-    buildComp.setOptions({
-        'trackName': 'foo',
-        'criteriaString': 'latest,ftrack://44dd23b6-4164-11df-9218-0019bb4983d8?entityType=tasktype,True',
-        'shotParentEntity': None,
-        'interactive': False,
-        'ignoreClips': False
-    })
-    buildComp.doit()
-
-
 class Delegate(delegate.Delegate):
     def __init__(self, bridge):
         super(Delegate, self).__init__(bridge)
@@ -64,7 +45,10 @@ class Delegate(delegate.Delegate):
                 action.triggered.connect(cmd)
                 uiElement.addAction( action )
 
-                buildCompsCommand = functools.partial(buildComps, data)
+                buildCompsCommand = functools.partial(
+                    ftrack_connect_nuke_studio.build_track.build_compositing_script_track,
+                    data
+                )
                 buildCompsAction = QtGui.QAction(
                     QtGui.QPixmap(':icon-ftrack-box'), 'Build assetised comps',
                     uiElement
