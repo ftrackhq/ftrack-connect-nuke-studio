@@ -7,7 +7,7 @@ import FnAssetAPI
 from FnAssetAPI.ui.toolkit import QtGui
 from ftrack_connect_foundry.ui import delegate
 from ftrack_connect_nuke_studio.ui.create_project import ProjectTreeDialog
-
+import ftrack_connect_nuke_studio.build_track
 
 
 def openCreateProjectUI(*args, **kwargs):
@@ -28,6 +28,25 @@ def openCreateProjectUI(*args, **kwargs):
     dialog.exec_()
 
 
+def buildComps(data):
+    '''Build comps from *data*.'''
+    if not data:
+        return
+
+    sequence = data[0].sequence()
+
+    buildComp = ftrack_connect_nuke_studio.build_track.CustomBuild(sequence)
+    buildComp.setTrackItems(data)
+    buildComp.setOptions({
+        'trackName': 'foo',
+        'criteriaString': 'latest,ftrack://44dd23b6-4164-11df-9218-0019bb4983d8?entityType=tasktype,True',
+        'shotParentEntity': None,
+        'interactive': False,
+        'ignoreClips': False
+    })
+    buildComp.doit()
+
+
 class Delegate(delegate.Delegate):
     def __init__(self, bridge):
         super(Delegate, self).__init__(bridge)
@@ -44,3 +63,11 @@ class Delegate(delegate.Delegate):
                 action = QtGui.QAction(QtGui.QPixmap(':icon-ftrack-box'), 'Create Project', uiElement)
                 action.triggered.connect(cmd)
                 uiElement.addAction( action )
+
+                buildCompsCommand = functools.partial(buildComps, data)
+                buildCompsAction = QtGui.QAction(
+                    QtGui.QPixmap(':icon-ftrack-box'), 'Build assetised comps',
+                    uiElement
+                )
+                buildCompsAction.triggered.connect(buildCompsCommand)
+                uiElement.addAction(buildCompsAction)
