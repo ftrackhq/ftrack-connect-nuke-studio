@@ -6,6 +6,7 @@ import FnAssetAPI
 
 import ftrack
 
+
 class CustomBuild(
     nuke.assetmgr.nukestudiohost.hostAdaptor.NukeStudioHostAdaptor.ui.buildAssetTrackActions.BuildAssetTrackAction
 ):
@@ -17,9 +18,17 @@ class CustomBuild(
         self._sequence = sequence
 
     def doit(self):
-        '''Build track.'''
+        '''Build track based on configured criteria and track items.
+
+        Overrides the BuildAssetTrackAction implementation to avoid asking the
+        active view for the sequence. This would error since there is no active
+        view when not used from the ui.
+
+        '''
         selection = self.getTrackItems()
 
+        # Use sequence and override behaviour where the active view was used to
+        # retreive it.
         sequence = self._sequence
         project = sequence.project()
 
@@ -55,6 +64,8 @@ def build_compositing_script_track(
     criteria = 'latest,{0},True'.format(task_type.getEntityRef())
     sequence = track_items[0].sequence()
 
+    # Pass in the sequence since the default implementation picks it from the 
+    # active view.
     action = CustomBuild(sequence)
     action.setTrackItems(track_items)
     action.setOptions({
