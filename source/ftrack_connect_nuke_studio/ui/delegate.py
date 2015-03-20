@@ -42,3 +42,8 @@ class Delegate(delegate.Delegate):
                 action = QtGui.QAction(QtGui.QPixmap(':icon-ftrack-box'), 'Create Project', uiElement)
                 action.triggered.connect(cmd)
                 uiElement.addAction( action )
+
+            nukeMenu = nuke.menu("Nuke")
+            menu = nukeMenu.addMenu("&ftrack")
+            subMenu = menu.addMenu('&Nuke')
+            self.populateMenu(subMenu)
