@@ -392,10 +392,12 @@ class ProjectTreeDialog(QtGui.QDialog):
             )
         )
         if track_item in self._post_processed_track_items:
+            # Mark the track item as completed.
             self._post_processed_track_items[track_item] = True
             self._check_post_process_complete()
 
     def _check_post_process_complete(self):
+        '''Build track if all track items have been post processed.'''
         if all([
             data for data in self._post_processed_track_items.values()
         ]):
