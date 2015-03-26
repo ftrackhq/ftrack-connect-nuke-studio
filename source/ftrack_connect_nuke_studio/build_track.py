@@ -4,7 +4,7 @@
 import nuke.assetmgr
 import FnAssetAPI
 
-import ftrack
+import ftrack_legacy as ftrack
 
 
 class CustomBuild(

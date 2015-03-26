@@ -188,7 +188,7 @@ class ApplicationLauncher(ftrack_connect.application.ApplicationLauncher):
         # hooks.
         environment = ftrack_connect.application.appendPath(
             os.path.join(
-                FTRACK_CONNECT_NUKE_STUDIO_PATH, 'crew_hook'
+                FTRACK_CONNECT_NUKE_STUDIO_PATH, 'application_hook'
             ), 'FTRACK_EVENT_PLUGIN_PATH', environment
         )
 
