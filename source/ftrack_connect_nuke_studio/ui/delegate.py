@@ -17,6 +17,10 @@ from ftrack_connect_nuke_studio.ui.widget.info_view import (
     InfoView as _InfoView
 )
 
+from ftrack_connect_nuke_studio.build_track import (
+    build_compositing_script_track
+)
+
 
 def openCreateProjectUI(*args, **kwargs):
     ''' Function to be triggered from createProject custom menu.
@@ -103,5 +107,16 @@ class Delegate(delegate.Delegate):
                 )
                 action.triggered.connect(cmd)
                 uiElement.addAction(action)
+
+                buildCompsCommand = functools.partial(
+                    build_compositing_script_track,
+                    data
+                )
+                buildCompsAction = QtGui.QAction(
+                    QtGui.QPixmap(':icon-ftrack-box'), 'Build assetised comps',
+                    uiElement
+                )
+                buildCompsAction.triggered.connect(buildCompsCommand)
+                uiElement.addAction(buildCompsAction)
 
             self.populate_ftrack()

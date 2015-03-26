@@ -198,7 +198,7 @@ class ProcessorPlugin(object):
         )
         nuke.scriptSaveAs(temporary_script_name)
 
-        nuke.executeBackgroundNuke(
+        background_process_id = nuke.executeBackgroundNuke(
             nuke.EXE_PATH,
             [write_node],
             nuke.FrameRanges([
@@ -208,3 +208,5 @@ class ProcessorPlugin(object):
             {}
         )
         nuke.scriptClear()
+        
+        return background_process_id

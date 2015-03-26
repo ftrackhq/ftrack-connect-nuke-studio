@@ -5,6 +5,7 @@ import tempfile
 import ftrack_legacy as ftrack
 import getpass
 import hiero
+import nuke
 
 import FnAssetAPI.logging
 from FnAssetAPI.ui.toolkit import QtGui, QtCore
@@ -30,6 +31,7 @@ from ftrack_connect_nuke_studio.ui.tag_item import TagItem
 from ftrack_connect_nuke_studio.processor import config
 import ftrack_connect_nuke_studio
 from ftrack_connect.ui.theme import applyTheme
+import ftrack_connect_nuke_studio.script_export
 
 
 class FTrackServerHelper(object):
@@ -260,6 +262,10 @@ class ProjectTreeDialog(QtGui.QDialog):
         super(ProjectTreeDialog, self).__init__(parent=parent)
         self.server_helper = FTrackServerHelper()
         applyTheme(self, 'integration')
+
+        self._background_process_data = dict()
+        self._post_processed_track_items = dict()
+        nuke.addAfterBackgroundRender(self._on_background_process_done)
         #: TODO: Consider if these permission checks are required.
         # user_is_allowed = self.server_helper.check_permissions()
         # if not user_is_allowed:
@@ -319,6 +325,88 @@ class ProjectTreeDialog(QtGui.QDialog):
 
             # Start populating the tree.
             self.worker.start()
+
+    def _register_background_process(self, id, processor_data, track_item):
+        '''Register background process with *id* and *processor_data* for *track_item*'''
+        self._background_process_data[id] = dict(
+            processor_data=processor_data,
+            track_item=track_item,
+            post_processed=False
+        )
+
+    def _on_background_process_done(self, context):
+        '''Handle background process done for process `id` in *context* dict.'''
+
+        #: TODO: Refactor this to a separate chained / post processor.
+        id = context['id']
+
+        if id not in self._background_process_data:
+            return 
+
+        data = self._background_process_data[id]['processor_data']
+        track_item = self._background_process_data[id]['track_item']
+        
+        FnAssetAPI.logging.debug(
+            'Handle processor done {id} {data} with {track_item}'.format(
+                id=id, data=data, track_item=track_item
+            )
+        )
+
+        # Get the asset version to processor was creating components on.
+        asset_version = ftrack.AssetVersion(data['asset_version_id'])
+
+        # Get the compositing task to export to.
+        parent = asset_version.getAsset().getParent()
+        compositing_tasks = parent.getTasks(taskTypes=['Compositing'])
+        if not compositing_tasks:
+            FnAssetAPI.logging.debug(
+                'Compositing task not found on {0}, '
+                'cannot publish nuke scene.'.format(
+                    parent
+                )
+            )
+            return
+
+        # Export assetized nuke scripts.
+        assetized_read_component = asset_version.getComponent(
+            name=data['component_name']
+        )
+        output = ftrack_connect_nuke_studio.script_export.export(
+            track_item, assetized_read_component.getEntityRef()
+        )
+
+        # Publish nuke script and annotations.
+        scene_asset = parent.createAsset('Nuke scene', assetType='comp')
+        scene_version = scene_asset.createVersion(
+            taskid=compositing_tasks[0].getId()
+        )
+        scene_version.createComponent(
+            file=output['comp'], name='nukescript'
+        )
+        scene_version.createComponent(
+            file=output['annotations'], name='annotations'
+        )
+        scene_version.publish()
+
+        FnAssetAPI.logging.debug(
+            'Track item {0} done. Status: {1}'.format(
+                track_item, self._post_processed_track_items
+            )
+        )
+        if track_item in self._post_processed_track_items:
+            # Mark the track item as completed.
+            self._post_processed_track_items[track_item] = True
+            self._check_post_process_complete()
+
+    def _check_post_process_complete(self):
+        '''Build track if all track items have been post processed.'''
+        if all([
+            data for data in self._post_processed_track_items.values()
+        ]):
+            track_items = self._post_processed_track_items.keys()
+            ftrack_connect_nuke_studio.build_track.build_compositing_script_track(
+                track_items
+            )
 
     def create_ui_widgets(self):
         '''Setup ui for create dialog.'''
@@ -472,8 +560,15 @@ class ProjectTreeDialog(QtGui.QDialog):
         plugins = ftrack_connect_nuke_studio.PROCESSOR_PLUGINS
         processor = args[0]
         data = args[1]
+
+        track_item = data.get('application_object')
+        if track_item:
+            data.pop('application_object')
+
         plugin = plugins.get(processor)
-        plugin.process(data)
+        process_id = plugin.process(data)
+        if processor == 'processor.publish':
+            self._register_background_process(process_id, data, track_item)
 
     def on_set_tree_root(self):
         '''Handle signal and populate the tree.'''
@@ -571,6 +666,13 @@ class ProjectTreeDialog(QtGui.QDialog):
     def create_project(self, data, previous=None):
         '''Recursive function to create a new ftrack project on the server.'''
         selected_workflow = self.workflow_combobox.currentText()
+
+
+        for datum in data:
+            #: TODO: Do we need to handle effect track items separately or
+            # are they instances of track item. 
+            self._post_processed_track_items[datum.track] = False
+
         for datum in data:
             # Gather all the useful informations from the track
             track_in = int(datum.track.source().sourceIn())
@@ -648,10 +750,7 @@ class ProjectTreeDialog(QtGui.QDialog):
                     )
 
                 if datum.type == 'task':
-                    print datum.name
                     processor = self.processors.get(datum.name)
-                    print processor
-
                     if not processor:
                         continue
 
@@ -678,9 +777,9 @@ class ProjectTreeDialog(QtGui.QDialog):
                                 'offset': offset,
                                 'asset_version_id': version_id,
                                 'component_name': component_name,
-                                'handles': handles
+                                'handles': handles,
+                                'application_object': datum.track
                             }
-
                             processor_name = component_fn.getName()
                             data = (processor_name,  out_data)
                             self.processor_ready.emit(data)
