@@ -71,12 +71,12 @@ connect_ftrack_new_api_dependency_link = (
 )
 
 connect_dependency_link = (
-    'https://bitbucket.org/ftrack/ftrack-connect/get/backlog/crew/integrate-with-nuke.zip'
-    '#egg=ftrack-connect-0.1.8'
+    'https://bitbucket.org/ftrack/ftrack-connect/get/demo/nab/2015.zip'
+    '#egg=ftrack-connect-0.1.9'
 )
 
 connect_foundry_dependency_link = (
-    'https://bitbucket.org/ftrack/ftrack-connect-foundry/get/backlog/switch-to-new-api.zip'
+    'https://bitbucket.org/ftrack/ftrack-connect-foundry/get/demo/nab/2015.zip'
     '#egg=ftrack-connect-foundry-0.1.0'
 )
 
