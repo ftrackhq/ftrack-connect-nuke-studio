@@ -36,7 +36,9 @@ def openCreateProjectUI(*args, **kwargs):
         tags = [tag for tag in tags if tag.metadata().hasKey('ftrack.type')]
         ftags.append((item, tags))
 
-    dialog = ProjectTreeDialog(data=ftags, parent=parent)
+    dialog = ProjectTreeDialog(
+        data=ftags, parent=parent, sequence=item.sequence()
+    )
     dialog.exec_()
 
 
