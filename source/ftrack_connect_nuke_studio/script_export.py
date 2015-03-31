@@ -67,8 +67,11 @@ class CustomScriptWriter(OriginalScriptWriter):
 
     def writeToDisk(self, scriptFilename):
         '''Write the script to disk with *scriptFilename*.'''
-        key = os.path.splitext(
-            os.path.basename(scriptFilename))[0].split('_')[-2]
+        if '_comp_annotations_' in scriptFilename:
+            key = 'annotations'
+        else:
+            key = 'comp'
+
         self.result_outputs[key] = scriptFilename
         OriginalScriptWriter.writeToDisk(self, scriptFilename)
 
