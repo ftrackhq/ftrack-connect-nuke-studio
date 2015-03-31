@@ -2,6 +2,7 @@
 # :copyright: Copyright (c) 2015 ftrack
 
 import nuke.assetmgr
+import hiero.core
 import FnAssetAPI
 
 import ftrack
@@ -26,6 +27,11 @@ class CustomBuild(
 
         '''
         selection = self.getTrackItems()
+         # Filter out non-track items.
+        selection = [
+            item for item in selection
+            if isinstance(item, hiero.core.TrackItem)
+        ]
 
         # Use sequence and override behaviour where the active view was used to
         # retreive it.
