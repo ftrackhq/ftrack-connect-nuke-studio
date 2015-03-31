@@ -383,6 +383,8 @@ class ProjectTreeDialog(QtGui.QDialog):
         annotations_asset = parent.createAsset(
             'Nuke annotations', assetType='nuke_antns'
         )
+        #: TODO: Consider removing taskid when classic locations structure works
+        # without task being set.
         annotations_version = annotations_asset.createVersion(
             taskid=compositing_tasks[0].getId()
         )

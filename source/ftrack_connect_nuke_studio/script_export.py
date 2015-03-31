@@ -54,10 +54,14 @@ class CustomScriptWriter(OriginalScriptWriter):
             for name, value in self._pre_comp_node.iteritems():
                 node.setKnob(name, value)
 
+        # if node.type() == 'FrameRange':
+        #     node.setKnob('first_frame', self._read_node_data['first'])
+        #     node.setKnob('last_frame', self._read_node_data['last'])
+
         # :TODO: Handle write node if necessary.
-        # elif node.type() == 'Write':
-        #     newNode = hiero.core.nuke.Node('MyWrite', **node.knobs())
-        #     node = newNode
+        if node.type() == 'Write':
+            node.setKnob('frame_mode', 'start at')
+            node.setKnob('frame', self._read_node_data['first'])
 
         return node
 
