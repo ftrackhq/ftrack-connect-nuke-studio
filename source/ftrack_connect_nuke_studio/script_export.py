@@ -17,12 +17,13 @@ class CustomScriptWriter(OriginalScriptWriter):
 
     result_outputs = {}
 
-    def __init__(self, read_node_data):
+    def __init__(self, read_node_data, pre_comp_node):
         '''Instansiate with *read_node_data* to assetize read node.'''
         # OriginalScriptWriter is not a  new-style class so constructor must be
         # called explicitly. 
         OriginalScriptWriter.__init__(self)
         self._read_node_data = read_node_data
+        self._pre_comp_node = pre_comp_node
 
     def addNode(self, node):
         '''Add *node* to script.'''
@@ -49,6 +50,10 @@ class CustomScriptWriter(OriginalScriptWriter):
             for name, value in self._read_node_data.iteritems():
                 node.setKnob(name, value)
 
+        if self._pre_comp_node and node.type() == 'Precomp':
+            for name, value in self._pre_comp_node.iteritems():
+                node.setKnob(name, value)
+
         # :TODO: Handle write node if necessary.
         # elif node.type() == 'Write':
         #     newNode = hiero.core.nuke.Node('MyWrite', **node.knobs())
@@ -64,7 +69,7 @@ class CustomScriptWriter(OriginalScriptWriter):
         OriginalScriptWriter.writeToDisk(self, scriptFilename)
 
 
-def export(track_item, read_node_data,
+def export(track_item, read_node_data, pre_comp_node=None,
     preset_name='Basic Nuke Shot With Annotations'
 ):
     preset = None
@@ -85,7 +90,7 @@ def export(track_item, read_node_data,
 
     # Replace the default ScriptWriter
     hiero.core.nuke.ScriptWriter = functools.partial(
-        CustomScriptWriter, read_node_data
+        CustomScriptWriter, read_node_data, pre_comp_node
     )
     # Export the track_item
     hiero.core.taskRegistry.createAndExecuteProcessor(
