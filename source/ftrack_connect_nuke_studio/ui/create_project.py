@@ -542,7 +542,7 @@ class ProjectTreeDialog(QtGui.QDialog):
         self.handles_layout.addWidget(self.handles_label)
 
         self.handles_spinbox = QtGui.QSpinBox(self.group_box)
-        self.handles_spinbox.setProperty('value', 5)
+        self.handles_spinbox.setProperty('value', 0)
         self.handles_layout.addWidget(self.handles_spinbox)
 
         self.group_box_layout.addLayout(self.handles_layout)
