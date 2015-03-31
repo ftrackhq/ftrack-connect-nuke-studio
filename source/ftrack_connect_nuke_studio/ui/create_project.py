@@ -397,8 +397,13 @@ class ProjectTreeDialog(QtGui.QDialog):
         assetized_read_component = asset_version.getComponent(
             name=data['component_name']
         )
+        read_node_data = {
+            'file': assetized_read_component.getEntityRef(),
+            'first': data['destination_in'],
+            'last': data['destination_out']
+        }
         output = ftrack_connect_nuke_studio.script_export.export(
-            track_item, assetized_read_component.getEntityRef()
+            track_item, read_node_data
         )
 
         # Publish nuke script and annotations.

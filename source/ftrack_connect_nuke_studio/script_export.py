@@ -17,12 +17,12 @@ class CustomScriptWriter(OriginalScriptWriter):
 
     result_outputs = {}
 
-    def __init__(self, entity_reference):
-        '''Instansiate with *entity_reference* to assetize read node.'''
+    def __init__(self, read_node_data):
+        '''Instansiate with *read_node_data* to assetize read node.'''
         # OriginalScriptWriter is not a  new-style class so constructor must be
         # called explicitly. 
         OriginalScriptWriter.__init__(self)
-        self._entity_reference = entity_reference
+        self._read_node_data = read_node_data
 
     def addNode(self, node):
         '''Add *node* to script.'''
@@ -46,7 +46,8 @@ class CustomScriptWriter(OriginalScriptWriter):
     def onNodeAdded(self, node):
         '''Callback to return node to be added from *node*.'''
         if node.type() == 'Read':
-            node.setKnob('file', self._entity_reference)
+            for name, value in self._read_node_data.iteritems():
+                node.setKnob(name, value)
 
         # :TODO: Handle write node if necessary.
         # elif node.type() == 'Write':
@@ -63,7 +64,7 @@ class CustomScriptWriter(OriginalScriptWriter):
         OriginalScriptWriter.writeToDisk(self, scriptFilename)
 
 
-def export(trackItem, entity_reference,
+def export(track_item, read_node_data,
     preset_name='Basic Nuke Shot With Annotations'
 ):
     preset = None
@@ -79,17 +80,17 @@ def export(trackItem, entity_reference,
 
     # Set the project root to a temp folder so we know where we output the
     # files.
-    project = trackItem.project()
+    project = track_item.project()
     project.setProjectRoot(tempfile.tempdir)
 
     # Replace the default ScriptWriter
     hiero.core.nuke.ScriptWriter = functools.partial(
-        CustomScriptWriter, entity_reference
+        CustomScriptWriter, read_node_data
     )
-    # Export the trackItem
+    # Export the track_item
     hiero.core.taskRegistry.createAndExecuteProcessor(
         preset,
-        [hiero.core.ItemWrapper(trackItem)],
+        [hiero.core.ItemWrapper(track_item)],
         synchronous=True
     )
 
