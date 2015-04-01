@@ -403,7 +403,7 @@ class ProjectTreeDialog(QtGui.QDialog):
             'last': data['destination_out']
         }
         output = ftrack_connect_nuke_studio.script_export.export(
-            track_item, read_node_data
+            track_item, compositing_tasks[0].getId(), read_node_data
         )
 
         annotations_asset = parent.createAsset(
@@ -423,7 +423,8 @@ class ProjectTreeDialog(QtGui.QDialog):
             'file': annotations_component.getEntityRef()
         }
         output = ftrack_connect_nuke_studio.script_export.export(
-            track_item, read_node_data, pre_comp_node=pre_comp_node
+            track_item, compositing_tasks[0].getId(), read_node_data,
+            pre_comp_node=pre_comp_node
         )
         # Publish nuke script and annotations.
         scene_asset = parent.createAsset('Nuke scene', assetType='comp')

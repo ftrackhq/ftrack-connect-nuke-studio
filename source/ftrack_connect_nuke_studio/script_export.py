@@ -17,13 +17,14 @@ class CustomScriptWriter(OriginalScriptWriter):
 
     result_outputs = {}
 
-    def __init__(self, read_node_data, pre_comp_node):
+    def __init__(self, task_id, read_node_data, pre_comp_node):
         '''Instansiate with *read_node_data* to assetize read node.'''
         # OriginalScriptWriter is not a  new-style class so constructor must be
         # called explicitly. 
         OriginalScriptWriter.__init__(self)
         self._read_node_data = read_node_data
         self._pre_comp_node = pre_comp_node
+        self._task_id = task_id
 
     def addNode(self, node):
         '''Add *node* to script.'''
@@ -58,6 +59,18 @@ class CustomScriptWriter(OriginalScriptWriter):
         #     node.setKnob('first_frame', self._read_node_data['first'])
         #     node.setKnob('last_frame', self._read_node_data['last'])
 
+        if node.type() == 'Root':
+            FnAssetAPI.logging.debug(
+                'Setting ftrack_task_id to {0}'.format(
+                    self._task_id
+                )
+            )
+            node.addInputTextKnob(
+                'ftrack_task_id',
+                value=self._task_id,
+                visible=False
+            )
+
         # :TODO: Handle write node if necessary.
         if node.type() == 'Write':
             node.setKnob('frame_mode', 'start at')
@@ -76,7 +89,7 @@ class CustomScriptWriter(OriginalScriptWriter):
         OriginalScriptWriter.writeToDisk(self, scriptFilename)
 
 
-def export(track_item, read_node_data, pre_comp_node=None,
+def export(track_item, task_id, read_node_data, pre_comp_node=None,
     preset_name='Basic Nuke Shot With Annotations'
 ):
     preset = None
@@ -97,7 +110,7 @@ def export(track_item, read_node_data, pre_comp_node=None,
 
     # Replace the default ScriptWriter
     hiero.core.nuke.ScriptWriter = functools.partial(
-        CustomScriptWriter, read_node_data, pre_comp_node
+        CustomScriptWriter, task_id, read_node_data, pre_comp_node
     )
     # Export the track_item
     hiero.core.taskRegistry.createAndExecuteProcessor(
