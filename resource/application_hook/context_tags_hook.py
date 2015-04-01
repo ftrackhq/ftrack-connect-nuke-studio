@@ -23,7 +23,7 @@ class ContextTags(object):
             ('project', 'show', None),
             ('episode', 'episode', '(\w+.)?EP(\d+)'),
             ('sequence', 'sequence', '(\w+.)?SQ(\d+)'),
-            ('shot', 'shot', '(\w+.)?SH(\d+)')
+            ('shot', 'shot', '(.+)')
         ]
 
     def register(self):
