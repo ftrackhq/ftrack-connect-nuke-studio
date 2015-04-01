@@ -10,6 +10,7 @@ from PySide import QtGui
 from FnAssetAPI import logging
 import nuke
 import hiero.core
+import hiero.ui
 import hiero.core.events
 import ftrack_connect.crew_hub
 import ftrack
@@ -192,9 +193,43 @@ class NukeCrew(QtGui.QDialog):
             self.on_refresh_event
         )
 
+        nuke.addOnScriptLoad(self._on_nuke_script_loaded)
+
         self.on_refresh_event()
 
         self._enter_chat()
+
+    def _on_nuke_script_loaded(self, *args, **kwargs):
+        logging.debug(
+            'Opened a script with task id {0}'.format(
+                nuke.root().knobs()['ftrack_task_id'].value()
+            )
+        )
+
+        task_id = nuke.root().knobs()['ftrack_task_id'].value()
+
+        working_user = None
+        for subscription in self._hub._subscriptions.values():
+            data = subscription['data']
+
+            for container in data['context']['containers']:
+
+                if container['id'] == task_id:
+                    working_user = data['user']
+                    break
+
+        if working_user:
+            message_box = QtGui.QMessageBox(hiero.ui.mainWindow())
+            message_box.setWindowTitle(
+                'Another user is already working on this task'
+            )
+            message_box.setText(
+                ('{user_name} is already working on the comp you are about to '
+                'open.').format(
+                    user_name=working_user['name']
+                )
+            )
+            message_box.exec_()
 
     def _enter_chat(self):
         '''.'''
