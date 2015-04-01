@@ -45,10 +45,12 @@ class UserClassifier(object):
 
         logging.info('Initialise classifier')
         self._lookup = dict()
+        self._context = dict()
 
     def update_context(self, context):
         '''Update based on *context*.'''
         self._lookup = dict()
+        self._context = context
 
         logging.info(
             'Classifying based context: "{0}"'.format(context)
@@ -82,12 +84,30 @@ class UserClassifier(object):
             '_lookup contains "{0}"'.format(str(self._lookup))
         )
 
-    def __call__(self, user_id):
+    def should_highlight(self, applications):
+        task_ids = self._context.get('task', [])
+
+        logging.info(
+            'Should highlight, user applications: "{0}" our context: "{1}"'.format(
+                applications, task_ids
+            )
+        )
+
+        for application in applications.values():
+            for container in application['context']['containers']:
+                if container['id'] in task_ids:
+                    return True
+
+        return False
+
+
+    def __call__(self, user_id, applications):
         '''Classify user and return relevant group.'''
+        highlight = self.should_highlight(applications)
         try:
-            return self._lookup[user_id]
+            return self._lookup[user_id], highlight
         except KeyError:
-            return 'others'
+            return 'others', highlight
 
 
 class NukeCrew(QtGui.QDialog):
@@ -240,11 +260,12 @@ class NukeCrew(QtGui.QDialog):
 
         if component_ids:
             components = session.query(
-                'select version.id from Component where id in'
+                'select version.id, version.task_id from Component where id in'
                 ' ({0})'.format(','.join(component_ids))
             ).all()
 
             for component in components:
                 context['asset_version'].append(component['version']['id'])
+                context['task'].append(component['version']['task_id'])
 
         return context
