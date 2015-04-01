@@ -144,6 +144,7 @@ class ApplicationStore(ftrack_connect.application.ApplicationStore):
 
             applications.extend(self._searchFilesystem(
                 expression=['/', 'usr', 'local', 'Nuke.*', 'Nuke\d.+'],
+                versionExpression=r'Nuke(?P<version>.*)\/.+$',
                 label='Nuke Studio {version}',
                 applicationIdentifier='nuke_studio_{version}',
                 icon='nuke_studio',
