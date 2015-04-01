@@ -2,7 +2,7 @@
 # :copyright: Copyright (c) 2015 ftrack
 
 import hiero
-import ftrack
+import ftrack_legacy as ftrack
 
 
 class Resolution(hiero.ui.FormatChooser):
