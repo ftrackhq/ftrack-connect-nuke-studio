@@ -406,6 +406,25 @@ class ProjectTreeDialog(QtGui.QDialog):
             track_item, read_node_data
         )
 
+        annotations_asset = parent.createAsset(
+            'Nuke annotations', assetType='nuke_antns'
+        )
+        #: TODO: Consider removing taskid when classic locations structure works
+        # without task being set.
+        annotations_version = annotations_asset.createVersion(
+            taskid=compositing_tasks[0].getId()
+        )
+        annotations_component = annotations_version.createComponent(
+            file=output['annotations'], name='annotations'
+        )
+        annotations_version.publish()
+
+        pre_comp_node = {
+            'file': annotations_component.getEntityRef()
+        }
+        output = ftrack_connect_nuke_studio.script_export.export(
+            track_item, read_node_data, pre_comp_node=pre_comp_node
+        )
         # Publish nuke script and annotations.
         scene_asset = parent.createAsset('Nuke scene', assetType='comp')
         scene_version = scene_asset.createVersion(
@@ -413,9 +432,6 @@ class ProjectTreeDialog(QtGui.QDialog):
         )
         scene_version.createComponent(
             file=output['comp'], name='nukescript'
-        )
-        scene_version.createComponent(
-            file=output['annotations'], name='annotations'
         )
         scene_version.publish()
 
