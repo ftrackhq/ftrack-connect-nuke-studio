@@ -98,10 +98,14 @@ class Delegate(delegate.Delegate):
         super(Delegate, self).populateUI(uiElement, specification, context)
 
         host = FnAssetAPI.SessionManager.currentSession().getHost()
-        if host and host.getIdentifier() == 'uk.co.foundry.nukestudio':
-            import nuke.assetmgr
+        if host and host.getIdentifier() == 'uk.co.foundry.nukestudio':            
+            try:
+                from nuke.assetmgr.nukestudiohost.hostAdaptor import NukeStudioHostAdaptor as studioAdaptor
+            except ImportError:
+                from nuke.assetmgr.host.adaptor import StudioAdaptor as studioAdaptor
+
             if context.locale.isOfType(
-                nuke.assetmgr.nukestudiohost.hostAdaptor.NukeStudioHostAdaptor.specifications.HieroTimelineContextMenuLocale
+                 studioAdaptor.specifications.HieroTimelineContextMenuLocale
             ):
                 data = context.locale.getData().get('event').sender.selection()
                 cmd = functools.partial(openCreateProjectUI, data)

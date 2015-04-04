@@ -1,16 +1,19 @@
 # :coding: utf-8
 # :copyright: Copyright (c) 2015 ftrack
 
-import nuke.assetmgr
+
+try:
+    from nuke.assetmgr.nukestudiohost.hostAdaptor import NukeStudioHostAdaptor as studioAdaptor
+except ImportError:
+    from nuke.assetmgr.host.adaptor import StudioAdaptor as studioAdaptor
+
 import hiero.core
 import FnAssetAPI
 
 import ftrack_legacy as ftrack
 
 
-class CustomBuild(
-    nuke.assetmgr.nukestudiohost.hostAdaptor.NukeStudioHostAdaptor.ui.buildAssetTrackActions.BuildAssetTrackAction
-):
+class CustomBuild(studioAdaptor.ui.buildAssetTrackActions.BuildAssetTrackAction):
     '''Build a track of items without using a ui.'''
 
     def __init__(self, sequence, *args, **kwargs):
