@@ -689,6 +689,7 @@ class ProjectTreeDialog(QtGui.QDialog):
         '''Recursive function to create a new ftrack project on the server.'''
         selected_workflow = self.workflow_combobox.currentText()
 
+        processor_data = [] 
 
         for datum in data:
             #: TODO: Do we need to handle effect track items separately or
@@ -804,9 +805,13 @@ class ProjectTreeDialog(QtGui.QDialog):
                             }
                             processor_name = component_fn.getName()
                             data = (processor_name,  out_data)
-                            self.processor_ready.emit(data)
+                            processor_data.append(data)
 
             self._refresh_tree()
+
+            # Start processors when all tasks have been created.
+            for data in processor_data:
+                self.processor_ready.emit(data)
 
             if datum.children:
                 self.create_project(datum.children, result)
