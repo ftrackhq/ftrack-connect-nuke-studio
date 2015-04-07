@@ -266,7 +266,7 @@ class ProjectTreeDialog(QtGui.QDialog):
 
         self._background_process_data = dict()
         self._post_processed_track_items = dict()
-
+        nuke.addAfterBackgroundRender(self._on_background_process_done)
         #: TODO: Consider if these permission checks are required.
         # user_is_allowed = self.server_helper.check_permissions()
         # if not user_is_allowed:
@@ -352,12 +352,29 @@ class ProjectTreeDialog(QtGui.QDialog):
             # Start populating the tree.
             self.worker.start()
 
-    def _process_plates(self, track_item, data):
+    def _register_background_process(self, id, processor_data, track_item):
+        '''Register background process with *id* and *processor_data* for *track_item*'''
+        self._background_process_data[id] = dict(
+            processor_data=processor_data,
+            track_item=track_item,
+            post_processed=False
+        )
+
+    def _on_background_process_done(self, context):
         '''Handle background process done for process `id` in *context* dict.'''
+
+        #: TODO: Refactor this to a separate chained / post processor.
+        id = context['id']
+
+        if id not in self._background_process_data:
+            return 
+
+        data = self._background_process_data[id]['processor_data']
+        track_item = self._background_process_data[id]['track_item']
         
         FnAssetAPI.logging.debug(
-            'Handle processor done {data} with {track_item}'.format(
-                data=data, track_item=track_item
+            'Handle processor done {id} {data} with {track_item}'.format(
+                id=id, data=data, track_item=track_item
             )
         )
 
@@ -382,8 +399,8 @@ class ProjectTreeDialog(QtGui.QDialog):
         )
         read_node_data = {
             'file': assetized_read_component.getEntityRef(),
-            # 'first': data['destination_in'],
-            # 'last': data['destination_out']
+            'first': data['destination_in'],
+            'last': data['destination_out']
         }
         output = ftrack_connect_nuke_studio.script_export.export(
             track_item, compositing_tasks[0].getId(), read_node_data
@@ -634,7 +651,7 @@ class ProjectTreeDialog(QtGui.QDialog):
         plugin = plugins.get(processor)
         process_id = plugin.process(data)
         if processor == 'processor.publish':
-            self._process_plates(track_item, data)
+            self._register_background_process(process_id, data, track_item)
 
     def on_set_tree_root(self):
         '''Handle signal and populate the tree.'''

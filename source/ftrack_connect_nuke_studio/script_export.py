@@ -72,9 +72,9 @@ class CustomScriptWriter(OriginalScriptWriter):
             )
 
         # :TODO: Handle write node if necessary.
-        # if node.type() == 'Write':
-        #     node.setKnob('frame_mode', 'start at')
-        #     node.setKnob('frame', self._read_node_data['first'])
+        if node.type() == 'Write':
+            node.setKnob('frame_mode', 'start at')
+            node.setKnob('frame', self._read_node_data['first'])
 
         return node
 
