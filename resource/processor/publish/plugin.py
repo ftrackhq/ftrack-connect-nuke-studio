@@ -4,6 +4,9 @@
 import os
 import tempfile
 
+import clique
+import ftrack_legacy as ftrack
+
 import ftrack_connect_nuke_studio.processor
 
 
@@ -43,6 +46,27 @@ class PublishPlugin(ftrack_connect_nuke_studio.processor.ProcessorPlugin):
         data['OUT']['file'] = temporary_path.name.replace('\\', '/')
 
         return data
+
+    def process(self, data):
+        '''Run script against *data*.'''
+        print data
+        asset_version_id = data['asset_version_id']
+
+        first = int(data['source_in']) - int(data['handles'])
+        last = int(data['source_out']) + int(data['handles'])
+
+        version = ftrack.AssetVersion(asset_version_id)
+
+        # Create the component and copy data to the most likely store
+        component = data['component_name']
+
+        collection = clique.parse(
+            data['source_file'], '{head}{padding}{tail}'
+        )
+        collection.indexes.update(set(range(first, last + 1)))
+
+        component = version.createComponent(component, str(collection))
+        component.setMeta('img_main', True)
 
 
 def register(registry):
