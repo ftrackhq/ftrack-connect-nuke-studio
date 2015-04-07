@@ -60,12 +60,21 @@ class PublishPlugin(ftrack_connect_nuke_studio.processor.ProcessorPlugin):
         # Create the component and copy data to the most likely store
         component = data['component_name']
 
-        collection = clique.parse(
-            data['source_file'], '{head}{padding}{tail}'
-        )
-        collection.indexes.update(set(range(first, last + 1)))
+        filePath = data['source_file']
+        try:
+            collection = clique.parse(
+                data['source_file'], '{head}{padding}{tail}'
+            )
+            collection.indexes.update(set(range(first, last + 1)))
 
-        component = version.createComponent(component, str(collection))
+            filePath = str(collection)
+        except ValueError:
+            # If value error is triggered we've encountered a path that is not
+            # matching the required pattern. Use the original file path since
+            # it is probably a single file.
+            pass
+
+        component = version.createComponent(component, filePath)
         component.setMeta('img_main', True)
 
 
