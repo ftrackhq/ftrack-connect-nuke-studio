@@ -5,6 +5,7 @@ import functools
 
 import FnAssetAPI
 import nuke
+import ftrack_legacy as ftrack
 
 from FnAssetAPI.ui.toolkit import QtGui
 from ftrack_connect_foundry.ui import delegate
@@ -20,6 +21,18 @@ from ftrack_connect_nuke_studio.ui.widget.info_view import (
 from ftrack_connect_nuke_studio.build_track import (
     build_compositing_script_track
 )
+
+
+def publish_plates(track_items):
+    ftrack.EVENT_HUB.publish(
+        ftrack.Event(
+            topic='ftrack.nukestudio.publish-plates',
+            data={
+                'track_items': track_items
+            }
+        ),
+        synchronous=True
+    )
 
 
 def openCreateProjectUI(*args, **kwargs):
@@ -115,6 +128,17 @@ class Delegate(delegate.Delegate):
                 )
                 action.triggered.connect(cmd)
                 uiElement.addAction(action)
+
+                publishPlates = functools.partial(
+                    publish_plates,
+                    data
+                )
+                publishPlatesAction = QtGui.QAction(
+                    QtGui.QPixmap(':icon-ftrack-box'), 'Publish plates',
+                    uiElement
+                )
+                publishPlatesAction.triggered.connect(publishPlates)
+                uiElement.addAction(publishPlatesAction)
 
                 buildCompsCommand = functools.partial(
                     build_compositing_script_track,
