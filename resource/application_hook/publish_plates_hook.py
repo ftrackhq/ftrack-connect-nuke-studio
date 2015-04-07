@@ -7,8 +7,6 @@ import FnAssetAPI.logging
 import ftrack_legacy as ftrack
 import clique
 
-import ftrack_connect_nuke_studio.ui.helper
-
 
 PLATE_ASSET_NAME = 'plate'
 PLATE_COMPONENT_NAME = 'main'
@@ -28,6 +26,7 @@ def publish_plate(asset, track_item):
 
     version = asset.createVersion(taskid=task_id)
 
+    import ftrack_connect_nuke_studio.ui.helper
     source = ftrack_connect_nuke_studio.ui.helper.source_from_track_item(
         track_item
     )
