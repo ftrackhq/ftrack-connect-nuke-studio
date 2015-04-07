@@ -98,3 +98,8 @@ def createThumbnail():
     version = ftrack.AssetVersion(id=asset_id)
     out = node['file'].value()
     version.createThumbnail(out)
+    task = version.getTask()
+    if task:
+        task.createThumbnail(out)
+        parent = task.getParent()
+        parent.createThumbnail(out)
