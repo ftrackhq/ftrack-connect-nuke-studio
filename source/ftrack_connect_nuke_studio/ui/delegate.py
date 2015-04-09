@@ -134,7 +134,7 @@ class Delegate(delegate.Delegate):
                     data
                 )
                 publishPlatesAction = QtGui.QAction(
-                    QtGui.QPixmap(':icon-ftrack-box'), 'Publish plates',
+                    QtGui.QPixmap(':icon-ftrack-box'), 'Re-publish plates',
                     uiElement
                 )
                 publishPlatesAction.triggered.connect(publishPlates)
@@ -152,3 +152,4 @@ class Delegate(delegate.Delegate):
                 uiElement.addAction(buildCompsAction)
 
             self.populate_ftrack()
+
