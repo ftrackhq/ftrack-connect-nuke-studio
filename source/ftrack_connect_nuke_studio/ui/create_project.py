@@ -380,6 +380,12 @@ class ProjectTreeDialog(QtGui.QDialog):
 
         # Get the asset version to processor was creating components on.
         asset_version = ftrack.AssetVersion(data['asset_version_id'])
+        assetized_read_component = asset_version.getComponent(
+            name=data['component_name']
+        )
+        track_item.source().setEntityReference(
+            assetized_read_component.getEntityRef()
+        )
 
         # Get the compositing task to export to.
         parent = asset_version.getAsset().getParent()
@@ -394,9 +400,6 @@ class ProjectTreeDialog(QtGui.QDialog):
             return
 
         # Export assetized nuke scripts.
-        assetized_read_component = asset_version.getComponent(
-            name=data['component_name']
-        )
         read_node_data = {
             'file': assetized_read_component.getEntityRef(),
             'first': data['destination_in'],
@@ -828,10 +831,6 @@ class ProjectTreeDialog(QtGui.QDialog):
                     self.server_helper.set_entity_data(
                         result[1], result[0], datum.track,
                         start, end, resolution, fps, handles
-                    )
-
-                    datum.track.source().setEntityReference(
-                        'ftrack://{0}?entityType={1}'.format(result[0], result[1])
                     )
 
                 if datum.type == 'task':
