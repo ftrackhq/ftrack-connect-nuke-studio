@@ -50,11 +50,14 @@ def publish_plate(asset, track_item):
     first = int(track_item.source().sourceIn())
     last = int(track_item.source().sourceOut())
 
-    collection = clique.parse(
-        source, '{head}{padding}{tail}'
-    )
-    collection.indexes.update(set(range(first, last + 1)))
-    path = str(collection)
+    try:
+        collection = clique.parse(
+            source, '{head}{padding}{tail}'
+        )
+        collection.indexes.update(set(range(first, last + 1)))
+        path = str(collection)
+    except ValueError:
+        path = source
 
     component = version.createComponent(PLATE_COMPONENT_NAME, path)
     component.setMeta('img_main', True)
