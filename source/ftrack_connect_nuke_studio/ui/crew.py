@@ -295,12 +295,15 @@ class NukeCrew(QtGui.QDialog):
 
         if component_ids:
             components = session.query(
-                'select version.id, version.task_id from Component where id in'
+                'select version.id, version.task_id, version.asset.parent.id from Component where id in'
                 ' ({0})'.format(','.join(component_ids))
             ).all()
 
             for component in components:
                 context['asset_version'].append(component['version']['id'])
                 context['task'].append(component['version']['task_id'])
+                context['shot'].append(
+                    component['version']['asset']['parent']['id']
+                )
 
         return context
