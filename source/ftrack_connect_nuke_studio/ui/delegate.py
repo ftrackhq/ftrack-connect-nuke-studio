@@ -11,6 +11,11 @@ from ftrack_connect_nuke_studio.ui.widget.info_view import (
     InfoView as _InfoView
 )
 
+try:
+    from nuke.assetmgr.nukestudiohost.hostAdaptor import NukeStudioHostAdaptor as studioAdaptor
+except ImportError:
+    from nuke.assetmgr.host.adaptor import StudioAdaptor as studioAdaptor
+
 
 def openCreateProjectUI(*args, **kwargs):
     ''' Function to be triggered from createProject custom menu.
@@ -87,7 +92,7 @@ class Delegate(delegate.Delegate):
         if host and host.getIdentifier() == 'uk.co.foundry.nukestudio':
             import nuke.assetmgr
             if context.locale.isOfType(
-                nuke.assetmgr.nukestudiohost.hostAdaptor.NukeStudioHostAdaptor.specifications.HieroTimelineContextMenuLocale
+                studioAdaptor.specifications.HieroTimelineContextMenuLocale
             ):
                 data = context.locale.getData().get('event').sender.selection()
                 cmd = functools.partial(openCreateProjectUI, data)
