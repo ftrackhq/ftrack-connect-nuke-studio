@@ -1,15 +1,16 @@
 # :coding: utf-8
 # :copyright: Copyright (c) 2014 ftrack
 
-import tempfile
-import ftrack
+import collections
+import logging
 import getpass
-import hiero
+
 import nuke
+import hiero
+from PySide import QtGui, QtCore
+import ftrack
 
-import FnAssetAPI.logging
-from FnAssetAPI.ui.toolkit import QtGui, QtCore
-
+from .widget.project_selector import ProjectSelector
 from .widget.fps import Fps
 from .widget.workflow import Workflow
 from .widget.resolution import Resolution
@@ -28,8 +29,6 @@ from ftrack_connect_nuke_studio.ui.helper import (
 
 from ftrack_connect_nuke_studio.ui.tag_tree_model import TagTreeModel
 from ftrack_connect_nuke_studio.ui.tag_item import TagItem
-from ftrack_connect_nuke_studio.processor import config
-import ftrack_connect_nuke_studio
 from ftrack_connect.ui.theme import applyTheme
 import ftrack_connect_nuke_studio.script_export
 
@@ -107,7 +106,8 @@ class FTrackServerHelper(object):
 
             self.server.action('set', data)
 
-    def set_entity_data(self, entity_type, entity_id, trackItem,  start, end,
+    def set_entity_data(
+        self, entity_type, entity_id, trackItem, start, end,
         resolution, fps, handles
     ):
         '''Populate data of the given *entity_id* and *entity_type*.'''
@@ -152,7 +152,7 @@ class FTrackServerHelper(object):
         try:
             self.server.action('set', asset_data)
         except ftrack.FTrackError as error:
-            FnAssetAPI.logging.debug(error)
+            logging.debug(error)
 
     def _rename_asset(self, asset_id, name):
         '''Rename the give *asset_id* with the given *name*'''
@@ -165,7 +165,7 @@ class FTrackServerHelper(object):
         try:
             self.server.action('set', asset_data)
         except ftrack.FTrackError as error:
-            FnAssetAPI.logging.debug(error)
+            logging.debug(error)
             return
 
     def create_asset(self, name, parent):
@@ -184,17 +184,19 @@ class FTrackServerHelper(object):
         asset_response = self.server.action('create', asset_data)
         return asset_response
 
-    def create_asset_version(self, asset_id, parent):
-        '''Create an asset version linked to the *asset_id* and *parent*.
+    def create_asset_version(self, asset_id, task=None):
+        '''Create an asset version linked to the *asset_id* and *task*.
 
-        *parent* must be a task.
+        *task* must be a task or None.
 
         '''
-        parent_id, parent_type = parent
+        task_id = None
+        if task:
+            task_id, _ = task
         version_data = {
             'type': 'assetversion',
             'assetid': asset_id,
-            'taskid': parent_id,
+            'taskid': task_id,
             'comment': '',
             'ispublished': True
         }
@@ -212,7 +214,8 @@ class FTrackServerHelper(object):
         typeid = self.tasktypes.get(name)
 
         data = {
-            'type': entity_type,
+            'type': 'context',
+            'objectType': entity_type,
             'parent_id': parent_id,
             'parent_type': parent_type,
             'name': name,
@@ -248,8 +251,22 @@ class FTrackServerHelper(object):
             return True
 
         except Exception as error:
-            FnAssetAPI.logging.debug(error)
+            logging.debug(error)
             return False
+
+def gather_processors(name, type):
+    '''Retrieve processors from *name* and *type* grouped by asset name.'''
+    processors = ftrack.EVENT_HUB.publish(
+        ftrack.Event(
+            topic='ftrack.processor.discover',
+            data=dict(
+                name=name,
+                object_type=type
+            )
+        ),
+        synchronous=True
+    )
+    return processors
 
 
 class ProjectTreeDialog(QtGui.QDialog):
@@ -257,7 +274,7 @@ class ProjectTreeDialog(QtGui.QDialog):
 
     processor_ready = QtCore.Signal(object)
 
-    def __init__(self, data=None, parent=None):
+    def __init__(self, data=None, parent=None, sequence=None):
         '''Initiate dialog and create ui.'''
         super(ProjectTreeDialog, self).__init__(parent=parent)
         self.server_helper = FTrackServerHelper()
@@ -269,14 +286,16 @@ class ProjectTreeDialog(QtGui.QDialog):
         #: TODO: Consider if these permission checks are required.
         # user_is_allowed = self.server_helper.check_permissions()
         # if not user_is_allowed:
-        #     FnAssetAPI.logging.warning(
+        #     logging.warning(
         #         'The user does not have enough permissions to run this application.'
         #         'please check with your administrator your roles and permission level.'
         #     )
         #     return
 
+        self.sequence = sequence
+
         self.create_ui_widgets()
-        self.processors = config()
+
         self.data = data
         self.setWindowTitle('Export project')
         self.logo_icon = QtGui.QIcon(':ftrack/image/dark/ftrackLogoColor')
@@ -287,7 +306,9 @@ class ProjectTreeDialog(QtGui.QDialog):
         self.tag_model = TagTreeModel(tree_data=fake_root, parent=self)
 
         # Set the data tree asyncronus.
-        self.worker = worker.Worker(tree_data_factory, [self.data])
+        self.worker = worker.Worker(
+            tree_data_factory, [self.data, self.get_project_tag()]
+        )
         self.worker.finished.connect(self.on_set_tree_root)
         self.project_worker = None
 
@@ -315,6 +336,31 @@ class ProjectTreeDialog(QtGui.QDialog):
         self.handles_spinbox.valueChanged.connect(self._refresh_tree)
         self.processor_ready.connect(self.on_processor_ready)
 
+        self.project_selector.project_selected.connect(
+            self.update_project_tag
+        )
+
+        self.start_worker()
+
+    def update_project_tag(self, project_code):
+        '''Update project tag on sequence with *project_code*.'''
+
+        self.workflow_combobox.setDisabled(False)
+
+        for tag in self.sequence.tags():
+            meta = tag.metadata()
+            if not meta.hasKey('type') or meta.value('type') != 'ftrack':
+                continue
+
+            if tag.name() == 'project':
+                meta.setValue('tag.value', project_code)
+                break
+
+        self.worker.args = [self.data, self.get_project_tag()]
+        self.start_worker()
+
+    def start_worker(self):
+        '''Validate tag structure and start worker.'''
         # Validate tag structure and set warning if there are any errors.
         tag_strucutre_valid, reason = is_valid_tag_structure(self.data)
         if not tag_strucutre_valid:
@@ -429,6 +475,32 @@ class ProjectTreeDialog(QtGui.QDialog):
                 track_items
             )
 
+    def get_project_tag(self):
+        '''Return project tag.'''
+        project_tag = hiero.core.findProjectTags(
+            hiero.core.project('Tag Presets'), 'project'
+        )[0].copy()
+
+        project_meta = project_tag.metadata()
+
+        attached_tag = None
+
+        for tag in self.sequence.tags():
+            meta = tag.metadata()
+            if not meta.hasKey('type') or meta.value('type') != 'ftrack':
+                continue
+
+            if tag.name() == project_tag.name():
+                attached_tag = tag
+                break
+        else:
+            project_meta.setValue('tag.value', self.sequence.project().name())
+            project_meta.setValue('ftrack.id', None)
+            self.sequence.addTag(project_tag)
+            attached_tag = project_tag
+
+        return attached_tag
+
     def create_ui_widgets(self):
         '''Setup ui for create dialog.'''
         self.resize(1024, 640)
@@ -458,10 +530,21 @@ class ProjectTreeDialog(QtGui.QDialog):
 
         # settings
         self.group_box = QtGui.QGroupBox('General Settings')
-        self.group_box.setMaximumSize(QtCore.QSize(16777215, 200))
+        self.group_box.setMaximumSize(QtCore.QSize(16777215, 350))
 
         self.group_box_layout = QtGui.QVBoxLayout(self.group_box)
 
+        project_tag = self.get_project_tag()
+        project_tag_metadata = project_tag.metadata()
+
+        # Create project selector and label.
+        self.project_selector = ProjectSelector(
+            project_name=project_tag_metadata.value('tag.value'),
+            parent=self.group_box
+        )
+        self.group_box_layout.addWidget(self.project_selector)
+
+        # Create Workflow selector and label.
         self.workflow_layout = QtGui.QHBoxLayout()
 
         self.label = QtGui.QLabel('Workflow', parent=self.group_box)
@@ -579,8 +662,7 @@ class ProjectTreeDialog(QtGui.QDialog):
 
     def on_processor_ready(self, args):
         '''Handle processor ready signal.'''
-        plugins = ftrack_connect_nuke_studio.PROCESSOR_PLUGINS
-        processor = args[0]
+        processor_name = args[0]
         data = args[1]
 
         track_item = data.get('application_object')
@@ -591,6 +673,17 @@ class ProjectTreeDialog(QtGui.QDialog):
         process_id = plugin.process(data)
         if processor == 'processor.publish':
             self._register_background_process(process_id, data, track_item)
+
+        ftrack.EVENT_HUB.publish(
+            ftrack.Event(
+                topic='ftrack.processor.launch',
+                data=dict(
+                    name=processor_name,
+                    input=data
+                )
+            ),
+            synchronous=True
+        )
 
     def on_set_tree_root(self):
         '''Handle signal and populate the tree.'''
@@ -604,25 +697,30 @@ class ProjectTreeDialog(QtGui.QDialog):
 
         index = selected.indexes()[0]
         item = index.model().data(index, role=self.tag_model.ITEM_ROLE)
-        processor = self.processors.get(item.name)
 
-        if not processor:
-            return
+        processor_groups = collections.defaultdict(list)
+        for processor in gather_processors(item.name, item.type):
+            if 'asset_name' in processor:
+                group_name = 'Asset: ' + processor['asset_name']
+            else:
+                group_name = 'Others'
+            processor_groups[group_name].append(processor)
 
-        asset_names = processor.keys()
-        for asset_name in asset_names:
+        for group_name, processors in processor_groups.iteritems():
             widget = QtGui.QWidget()
             layout = QtGui.QVBoxLayout()
             widget.setLayout(layout)
 
-            for component_name, component_fn in processor[asset_name].items():
+            for processor in processors:
+                processor_name = processor['name']
+                defaults = processor['defaults']
 
-                data = QtGui.QGroupBox(component_name)
+                data = QtGui.QGroupBox(processor_name)
                 data_layout = QtGui.QVBoxLayout()
                 data.setLayout(data_layout)
 
                 layout.addWidget(data)
-                for node_name, knobs in component_fn.defaults.items():
+                for node_name, knobs in defaults.iteritems():
                     for knob, knob_value in knobs.items():
                         knob_layout = QtGui.QHBoxLayout()
                         label = QtGui.QLabel('%s:%s' % (node_name, knob))
@@ -632,7 +730,7 @@ class ProjectTreeDialog(QtGui.QDialog):
                         knob_layout.addWidget(value)
                         data_layout.addLayout(knob_layout)
 
-            self.tool_box.addItem(widget, asset_name)
+            self.tool_box.addItem(widget, group_name)
 
     def on_close_dialog(self):
         '''Handle signal trigged when close dialog button is pressed.'''
@@ -712,7 +810,7 @@ class ProjectTreeDialog(QtGui.QDialog):
                 # for a .mov file while Nuke is expecting Frame in 1.
                 track_in += 1
                 track_out += 1
-                FnAssetAPI.logging.debug(
+                logging.debug(
                     'Single file detected, adjusting frame start and frame end '
                     'to {0}-{1}'.format(track_in, track_out)
                 )
@@ -723,16 +821,19 @@ class ProjectTreeDialog(QtGui.QDialog):
             resolution = self.resolution_combobox.currentFormat()
             offset = self.start_frame_offset_spinbox.value()
             handles = self.handles_spinbox.value()
+            asset_parent = None
+            asset_task = None
 
             if datum.type == 'show':
                 if datum.exists:
-                    FnAssetAPI.logging.debug('%s %s exists as %s, reusing it.' % (
+                    logging.debug('%s %s exists as %s, reusing it.' % (
                         datum.name, datum.type, datum.exists.get('showid')))
                     result = (datum.exists.get('showid'), 'show')
                 else:
-                    FnAssetAPI.logging.debug('creating show %s' % datum.name)
+                    project_name = self.project_selector.get_new_name()
+                    logging.debug('creating show %s' % project_name)
                     result = self.server_helper.create_project(
-                        datum.name, selected_workflow)
+                        project_name, selected_workflow)
                     datum.exists = {'showid': result[0]}
 
                 show_meta = {
@@ -746,11 +847,11 @@ class ProjectTreeDialog(QtGui.QDialog):
 
             else:
                 if datum.exists:
-                    FnAssetAPI.logging.debug('%s %s exists as %s, reusing it.' % (
+                    logging.debug('%s %s exists as %s, reusing it.' % (
                         datum.name, datum.type, datum.exists.get('taskid')))
                     result = (datum.exists.get('taskid'), 'task')
                 else:
-                    FnAssetAPI.logging.debug(
+                    logging.debug(
                         'creating %s %s' % (datum.type, datum.name))
                     try:
                         result = self.server_helper.create_entity(
@@ -761,51 +862,66 @@ class ProjectTreeDialog(QtGui.QDialog):
                     datum.exists = {'taskid': result[0]}
 
                 if datum.type == 'shot':
-                    FnAssetAPI.logging.debug(
+                    logging.debug(
                         'Setting metadata to %s' % datum.name)
                     self.server_helper.set_entity_data(
                         result[1], result[0], datum.track,
                         start, end, resolution, fps, handles
                     )
 
-                    datum.track.source().setEntityReference(
-                        'ftrack://{0}?entityType={1}'.format(result[0], result[1])
-                    )
+                    asset_parent = result
+                    asset_task = None
 
                 if datum.type == 'task':
-                    processor = self.processors.get(datum.name)
-                    if not processor:
-                        continue
+                    asset_parent = previous
+                    asset_task = result
 
-                    asset_names = processor.keys()
-                    for asset_name in asset_names:
-                        asset = self.server_helper.create_asset(
-                            asset_name, previous
-                        )
-                        asset_id = asset.get('assetid')
+                processors = gather_processors(datum.name, datum.type)
 
-                        version_id = self.server_helper.create_asset_version(
-                            asset_id, result
-                        )
+                if processors:
+                    assets = dict()
 
-                        for component_name, component_fn in processor[asset_name].items():
-                            out_data = {
-                                'resolution': resolution,
-                                'source_in': track_in,
-                                'source_out': track_out,
-                                'source_file': source,
-                                'destination_in': start,
-                                'destination_out': end,
-                                'fps': fps,
-                                'offset': offset,
+                    for processor in processors:
+
+                        version_id = None
+                        asset_name = processor.get('asset_name')
+                        if asset_name is not None:
+                            if asset_name not in assets:
+                                asset = self.server_helper.create_asset(
+                                    asset_name, asset_parent
+                                )
+                                asset_id = asset.get('assetid')
+                                version_id = self.server_helper.create_asset_version(
+                                    asset_id, asset_task
+                                )
+                                assets[asset_name] = version_id
+                            else:
+                                version_id = assets[asset_name]
+
+                        out_data = {
+                            'resolution': resolution,
+                            'source_in': track_in,
+                            'source_out': track_out,
+                            'source_file': source,
+                            'destination_in': start,
+                            'destination_out': end,
+                            'fps': fps,
+                            'offset': offset,
+                            'entity_id': result[0],
+                            'entity_type': result[1],
+                            'handles': handles,
+                            'application_object': datum.track
+                        }
+
+                        if version_id:
+                            out_data.update({
                                 'asset_version_id': version_id,
-                                'component_name': component_name,
-                                'handles': handles,
-                                'application_object': datum.track
-                            }
-                            processor_name = component_fn.getName()
-                            data = (processor_name,  out_data)
-                            processor_data.append(data)
+                                'component_name': processor['name']
+                            })
+
+                        processor_name = component_fn.getName()
+                        data = (processor_name,  out_data)
+                        processor_data.append(data)
 
             self._refresh_tree()
 

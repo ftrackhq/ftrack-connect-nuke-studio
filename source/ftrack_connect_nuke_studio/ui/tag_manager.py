@@ -1,10 +1,14 @@
 # :coding: utf-8
 # :copyright: Copyright (c) 2014 ftrack
 
+import logging
+import re
+
 import hiero.core
 import ftrack
-import FnAssetAPI.logging
+
 from ftrack_connect.ui import resource
+
 
 # Default context tags.
 DEFAULT_CONTEXT_TAGS = [
@@ -16,15 +20,60 @@ DEFAULT_CONTEXT_TAGS = [
 ]
 
 
+def update_tag_value_from_name(track_item):
+    '''Update meta on ftrack tags on *track_item*.
+
+    Uses the tag.re field to extract the context from the name,
+    and set it back to the applied tag.
+
+    '''
+    logger = logging.getLogger('{0}.update_tag_value_from_name'.format(
+        __name__
+    ))
+    name = track_item.name()
+    tags = track_item.tags()
+
+    for tag in tags:
+        tag_name = tag.name()
+        meta = tag.metadata()
+
+        # Filter out any non ftrack tag
+        if not meta.hasKey('type') or meta.value('type') != 'ftrack':
+            logger.debug(
+                '{0} is not a valid track tag type'.format(tag_name)
+            )
+            continue
+
+        # Handle a tag with a regular expression.
+        if meta.hasKey('tag.re'):
+            match = meta.value('tag.re')
+            if not match:
+                # If the regular expression is empty skip it.
+                continue
+
+            result = re.match(match, name)
+            if result:
+                result_value = result.groups()[-1]
+                logger.debug(
+                    'Setting {0} to {1} on {2}'.format(
+                        tag_name, result_value, name
+                    )
+                )
+                meta.setValue('tag.value', result_value)
+
+
 class TagManager(object):
     '''Creates all the custom tags wrapping the ftrack's entities.'''
 
     def __init__(self, *args, **kwargs):
         ''' Initialize and create the needed Bin and Tags.'''
-        FnAssetAPI.logging.debug('Creating Ftrack tags')
+        self.logger = logging.getLogger(
+            __name__ + '.' + self.__class__.__name__
+        )
+        self.logger.debug('Creating Ftrack tags')
         self.project = hiero.core.project('Tag Presets')
         self.project.setEditable(True)
-        self.ftrack_bin_main = hiero.core.Bin('fTrack')
+        self.ftrack_bin_main = hiero.core.Bin('ftrack')
         self.ftrack_bin_context = hiero.core.Bin('Context')
         self.ftrack_bin_task = hiero.core.Bin('Task')
 
@@ -41,10 +90,11 @@ class TagManager(object):
 
     def _setTasksTags(self):
         '''Create task tags from ftrack tasks.'''
-        FnAssetAPI.logging.debug('Creating Ftrack task tags')
+        self.logger.debug('Creating Ftrack task tags')
 
         task_types = ftrack.getTaskTypes()
 
+        task_type_tags = []
         for task_type in task_types:
             ftag = hiero.core.Tag(task_type.getName())
             ftag.setIcon(':ftrack/image/integration/task')
@@ -55,11 +105,24 @@ class TagManager(object):
             meta.setValue('ftrack.id', task_type.getId())
             meta.setValue('ftrack.name', task_type.getName())
             meta.setValue('tag.value', task_type.getName())
-            self.ftrack_bin_task.addItem(ftag)
+            task_type_tags.append((task_type.getName(), ftag))
+
+        task_type_tags = sorted(
+            task_type_tags, key=lambda tag_tuple: tag_tuple[0].lower()
+        )
+
+        self.logger.debug(
+            u'Added task type tags: {0}'.format(
+                task_type_tags
+            )
+        )
+
+        for _, tag in task_type_tags:
+            self.ftrack_bin_task.addItem(tag)
 
     def _setContextTags(self):
         '''Create context tags from the common ftrack tasks.'''
-        FnAssetAPI.logging.debug('Creating Ftrack context tags')
+        self.logger.debug('Creating Ftrack context tags')
 
         result = ftrack.EVENT_HUB.publish(
             ftrack.Event(
@@ -70,11 +133,20 @@ class TagManager(object):
 
         context_tags = []
         if not result:
+            self.logger.debug(
+                'Retrieved 0 tags form hook. Using default tags'
+            )
             context_tags = DEFAULT_CONTEXT_TAGS
         else:
 
             for tags in result:
                 context_tags += tags
+
+        self.logger.debug(
+            u'Added context tags: {0}'.format(
+                context_tags
+            )
+        )
 
         for context_tag in context_tags:
             # explode the tag touples
@@ -89,7 +161,7 @@ class TagManager(object):
             if icon == 'show':
                 icon = 'home'
 
-            FnAssetAPI.logging.info(icon)
+            logging.info(icon)
             ftag.setIcon(':ftrack/image/integration/{0}'.format(icon))
 
             meta = ftag.metadata()
