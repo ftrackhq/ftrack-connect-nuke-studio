@@ -169,6 +169,9 @@ class ProcessorPlugin(object):
             'Saving temporary script to "{0}"'.format(temporary_script_name)
         )
         nuke.scriptSaveAs(temporary_script_name)
+        max_cache = str(
+            max(nuke.memory("max_usage") / 1097152, 16) * 4
+        ) + "M"
 
         nuke.executeBackgroundNuke(
             nuke.EXE_PATH,
@@ -177,7 +180,7 @@ class ProcessorPlugin(object):
                 nuke.FrameRange('{0}-{1}'.format(int(start), int(end)))
             ]),
             nuke.views(),
-            {}
+            {'maxThreads': 1, 'maxCache': max_cache}
         )
         nuke.scriptClear()
 
