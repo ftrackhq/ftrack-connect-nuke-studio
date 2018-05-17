@@ -7,41 +7,13 @@ import logging
 import ftrack_api
 import time
 
-# from hiero.core.util.filesystem import makeDirs as _makeDirs
-#
-# # monkey patch makeDirs for scripts:
-# def nullMaKeDirs(dirPath):
-#     hiero.core.log.warning('Creating script path: {0}'.format(dirPath))
-#     _makeDirs(dirPath)
-#
-#
-#
-# hiero.core.util.filesystem.makeDirs = nullMaKeDirs
 
-
-FTRACK_SHOW_PATH = os.path.join(
-    '{ftrack_project}',
-    '{ftrack_task}',
+FTRACK_PATH = os.path.join(
+    '{ftrack_project_structure}',
     '{ftrack_asset}',
     '{ftrack_component}'
 )
 
-FTRACK_SEQUENCE_PATH = os.path.join(
-    '{ftrack_project}',
-    '{ftrack_shot}',
-    '{ftrack_task}',
-    '{ftrack_asset}',
-    '{ftrack_component}'
-)
-
-FTRACK_SHOT_PATH = os.path.join(
-    '{ftrack_project}',
-    '{ftrack_sequence}',
-    '{ftrack_shot}',
-    '{ftrack_task}',
-    '{ftrack_asset}',
-    '{ftrack_component}'
-)
 
 
 class FtrackProcessorError(Exception):
@@ -138,23 +110,26 @@ class FtrackBasePreset(FtrackBase):
     def set_export_root(self):
         self.properties()['exportRoot'] = self.ftrack_location.accessor.prefix
 
-    def resolve_ftrack_project(self, task):
-        return task.projectName()
-
-    def resolve_ftrack_sequence(self, task):
+    def resolve_ftrack_project_structure(self, task):
         trackItem = task._item
-        return trackItem.name().split('_')[0]
 
-    def resolve_ftrack_shot(self, task):
-        trackItem = task._item
+        project_name = task.projectName()
 
         if not isinstance(trackItem, hiero.core.Sequence):
-            return trackItem.name().split('_')[1]
+            sequence_name = trackItem.name().split('_')[0]
+            shot_name = trackItem.name().split('_')[1]
         else:
-            return trackItem.name()
+            sequence_name = trackItem.name()
+            shot_name = ''
 
-    def resolve_ftrack_task(self, task):
-        return self.properties()['ftrack']['task_type']
+        task_name = self.properties()['ftrack']['task_type']
+
+        return os.path.sep.join([
+            project_name,
+            sequence_name,
+            shot_name,
+            task_name
+        ])
 
     def resolve_ftrack_asset(self, task):
         return task._preset.name()
@@ -168,27 +143,9 @@ class FtrackBasePreset(FtrackBase):
     def addFtrackResolveEntries(self, resolver):
 
         resolver.addResolver(
-            '{ftrack_project}',
-            'Ftrack project name.',
-            lambda keyword, task: self.resolve_ftrack_project(task)
-        )
-
-        resolver.addResolver(
-            '{ftrack_sequence}',
-            'Ftrack sequence name.',
-            lambda keyword, task: self.resolve_ftrack_sequence(task)
-        )
-
-        resolver.addResolver(
-            '{ftrack_shot}',
-            'Ftrack shot name.',
-            lambda keyword, task: self.resolve_ftrack_shot(task)
-        )
-
-        resolver.addResolver(
-            '{ftrack_task}',
-            'Ftrack task name.',
-            lambda keyword, task: self.resolve_ftrack_task(task)
+            '{ftrack_project_structure}',
+            'Ftrack project structure.',
+            lambda keyword, task: self.resolve_ftrack_project_structure(task)
         )
 
         resolver.addResolver(

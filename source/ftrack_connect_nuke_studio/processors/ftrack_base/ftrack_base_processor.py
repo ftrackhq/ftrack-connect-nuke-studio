@@ -123,10 +123,10 @@ class FtrackProcessor(FtrackBase):
 
         # Note we do resolve {ftrack_version} as part of the {ftrack_asset} function.
         self.fn_mapping = {
-            '{ftrack_project}': self._create_project_fragment,
-            '{ftrack_sequence}': self._create_sequence_fragment,
-            '{ftrack_shot}': self._create_shot_fragment,
-            '{ftrack_task}': self._create_task_fragment,
+            '{ftrack_project_structure}': self._create_project_structure_fragment,
+            # '{ftrack_sequence}': self._create_sequence_fragment,
+            # '{ftrack_shot}': self._create_shot_fragment,
+            # '{ftrack_task}': self._create_task_fragment,
             '{ftrack_asset}': self._create_asset_fragment,
             '{ftrack_component}': self._create_component_fragment
         }
@@ -304,7 +304,7 @@ class FtrackProcessor(FtrackBase):
             raise FtrackProcessorError(e)
         return result
 
-    def _create_project_fragment(self, name, parent, task):
+    def _create_project_structure_fragment(self, name, parent, task):
         project = self.session.query(
             'Project where name is "{0}"'.format(name)
         ).first()
@@ -314,30 +314,40 @@ class FtrackProcessor(FtrackBase):
                 'full_name': name,
                 'project_schema': self.schema
             })
-        return project
 
-    def _create_sequence_fragment(self, name, parent, task):
+        # Sequence
         sequence = self.session.query(
-            'Sequence where name is "{0}" and parent.id is "{1}"'.format(name, parent['id'])
+            'Sequence where name is "{0}" and parent.id is "{1}"'.format(name, project['id'])
         ).first()
         if not sequence:
             sequence = self.session.create('Sequence', {
                 'name': name,
-                'parent': parent
+                'parent': project
             })
-        return sequence
 
-    def _create_shot_fragment(self, name, parent, task):
+        # Shot
         shot = self.session.query(
-            'Shot where name is "{0}" and parent.id is "{1}"'.format(name, parent['id'])
+            'Shot where name is "{0}" and parent.id is "{1}"'.format(name, sequence['id'])
         ).first()
         if not shot:
             shot = self.session.create('Shot', {
                 'name': name,
-                'parent': parent,
+                'parent': sequence,
                 'status': self.shot_status
             })
-        return shot
+
+        # Task
+        task = self.session.query(
+            'Task where name is "{0}" and parent.id is "{1}"'.format(name, shot['id'])
+        ).first()
+        if not task:
+            task = self.session.create('Task', {
+                'name': name,
+                'parent': shot,
+                'status': self.task_status,
+                'type': self.task_type
+            })
+        return task
 
     def _create_asset_fragment(self, name, parent, task):
         asset = self.session.query(
@@ -399,10 +409,14 @@ class FtrackProcessor(FtrackBase):
         path = self.resolvePath(self._shotPath)
         parent = None  # After the loop this will be containing the component object.
 
-        for template, token in zip(self._shotPath.split(os.path.sep), path.split(os.path.sep)):
-            fragment_fn = self.fn_mapping.get(template, self._skip_fragment)
-            parent = fragment_fn(token, parent, self)
+        self.logger.info(self._shotPath)
+        self.logger.info(path)
 
+        project_structure = os.path.sep.join(self._shotPath.split(os.path.sep)[:2])
+        asset = self._shotPath.split(os.path.sep)[-2]
+        component = self._shotPath.split(os.path.sep)[-1]
+
+        task = self._create_project_structure_fragment(project_structure)
         self.session.commit()
         self._component = parent
 

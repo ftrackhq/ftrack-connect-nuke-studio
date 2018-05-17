@@ -15,7 +15,7 @@ from ftrack_connect_nuke_studio.processors.ftrack_tasks.ftrack_nuke_shot_exporte
 from ftrack_connect_nuke_studio.processors.ftrack_tasks.ftrack_nuke_render_exporter import FtrackNukeRenderExporterPreset
 from ftrack_connect_nuke_studio.processors.ftrack_tasks.ftrack_audio_exporter import FtrackAudioExporterPreset
 from ftrack_connect_nuke_studio.processors.ftrack_tasks.ftrack_edl_exporter import FtrackEDLExporterPreset
-from ftrack_base import FTRACK_SHOT_PATH, FTRACK_SHOW_PATH
+from ftrack_base import FTRACK_PATH
 
 registry = hiero.core.taskRegistry
 
@@ -28,9 +28,6 @@ hiero.core.log = logger
 
 def register_processors():
 
-    ftrack_shot_path = FTRACK_SHOT_PATH
-    ftrack_show_path = FTRACK_SHOW_PATH
-
     # Register the base preset for ftrack shot processor.
     # this could be moved to a discover function
     shot_name = 'Ftrack Shot Preset'
@@ -39,7 +36,7 @@ def register_processors():
         'NukeScript',
         {
             'readPaths': [],
-            'writePaths': [ftrack_shot_path],
+            'writePaths': [FTRACK_PATH],
             'timelineWriteNode': '',
         }
     )
@@ -60,8 +57,8 @@ def register_processors():
 
     shot_properties = {
         'exportTemplate': (
-            (ftrack_shot_path, nuke_script_processor),
-            (ftrack_shot_path, nuke_render_processor),
+            (FTRACK_PATH, nuke_script_processor),
+            (FTRACK_PATH, nuke_render_processor),
             # (ftrack_shot_path, audio_processor),
 
         ),
@@ -83,7 +80,7 @@ def register_processors():
 
     timeline_properties = {
         'exportTemplate': (
-            (ftrack_show_path, edl_processor),
+            (FTRACK_PATH, edl_processor),
         ),
         'cutLength': True,
     }
