@@ -897,21 +897,6 @@ class FtrackProcessorUI(FtrackBase):
         )
         parent_layout.addRow(label + ':', self.task_type_options_widget)
 
-    def add_asset_name_options(self, parent_layout):
-        '''Create asset name options widget with parent *parent_layout*.'''
-        asset_name = self._preset.properties()['ftrack']['asset_name']
-        key, value, label = 'asset_name', asset_name, 'Set asset name as'
-        tooltip = 'Select an asset name to publish to.'
-        self.asset_name_options_widget = UIPropertyFactory.create(
-            type(value),
-            key=key,
-            value=value,
-            dictionary=self._preset.properties()['ftrack'],
-            label=label + ':',
-            tooltip=tooltip
-        )
-        parent_layout.addRow(label + ':', self.asset_name_options_widget)
-
     def add_thumbnail_options(self, parent_layout):
         '''Create thumbnail options widget with parent *parent_layout*.'''
         # Thumbanil generation.
@@ -943,26 +928,6 @@ class FtrackProcessorUI(FtrackBase):
         )
         parent_layout.addRow(label + ':', self.reviewable_options_widget)
 
-    def add_asset_type_options(self, parent_layout):
-        '''Create asset type options widget with parent *parent_layout*.'''
-        asset_types = self.session.query(
-            'AssetType'
-        ).all()
-
-        asset_type_names = [asset_type['short'] for asset_type in asset_types]
-        key, value, label = 'asset_type_code', asset_type_names, 'Asset Type'
-        tooltip = 'Asset type to be created.'
-
-        self.asset_type_options_widget = UIPropertyFactory.create(
-            type(value),
-            key=key,
-            value=value,
-            dictionary=self._preset.properties()['ftrack'],
-            label=label + ':',
-            tooltip=tooltip
-        )
-        parent_layout.addRow(label + ':', self.asset_type_options_widget)
-
     def add_task_templates_options(self, parent_layout):
         ''' Create task template options widget with parent *parent_layout*.'''
         self.template_widget_options_widget = Template(self._project)
@@ -991,8 +956,6 @@ class FtrackProcessorUI(FtrackBase):
         self.add_project_options(form_layout)
         self.add_project_scheme_options(form_layout)
         self.add_task_type_options(form_layout, export_items)
-        self.add_asset_type_options(form_layout)
-        self.add_asset_name_options(form_layout)
         self.add_thumbnail_options(form_layout)
         self.add_reviewable_options(form_layout)
         self.set_ui_tweaks()
