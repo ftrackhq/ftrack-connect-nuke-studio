@@ -16,6 +16,7 @@ from ftrack_connect_nuke_studio_beta.processors.ftrack_tasks.ftrack_nuke_render_
 from ftrack_connect_nuke_studio_beta.processors.ftrack_tasks.ftrack_audio_exporter import FtrackAudioExporterPreset
 from ftrack_connect_nuke_studio_beta.processors.ftrack_tasks.ftrack_edl_exporter import FtrackEDLExporterPreset
 from ftrack_connect_nuke_studio_beta.processors.ftrack_tasks.ftrack_reviewable_exporter import FtrackReviewableExporterPreset
+from ftrack_connect_nuke_studio_beta.processors.ftrack_tasks.ftrack_edit_exporter import FtrackEditExporterPreset
 
 from ftrack_base import FTRACK_PROJECT_STRUCTURE
 
@@ -67,8 +68,13 @@ def register_processors():
         'Audio', {}
     )
 
+    shot_edit_processor = FtrackEditExporterPreset(
+        'Cuts', {}
+    )
+
     shot_properties = {
         'exportTemplate': (
+            (FTRACK_PROJECT_STRUCTURE, shot_edit_processor),
             (FTRACK_PROJECT_STRUCTURE, nuke_script_processor),
             (FTRACK_PROJECT_STRUCTURE, nuke_render_processor),
             (FTRACK_PROJECT_STRUCTURE, reviewable_processor),
