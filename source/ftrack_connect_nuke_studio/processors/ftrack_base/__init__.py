@@ -120,6 +120,7 @@ class FtrackBasePreset(FtrackBase):
         properties = self.properties()
         properties.setdefault('ftrack', {})
 
+        self.properties()['ftrack']['opt_publish_metadata'] = True
         self.properties()['ftrack']['opt_publish_reviewable'] = True
         self.properties()['ftrack']['opt_publish_thumbnail'] = False
         self.properties()['useAssets'] = False

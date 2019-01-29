@@ -834,8 +834,19 @@ class FtrackProcessor(FtrackBase):
             if ext == '.mov':
                 component['version'].encode_media(publish_path)
 
+        if self._preset.properties()['ftrack'].get('opt_publish_metadata'):
+            metadata = render_task._clip.mediaSource().metadata()
+            self.publish_metadata(component, metadata)
+
         self.session.commit()
         render_data['published'] = True
+
+    def publish_metadata(self, component, metadata):
+        version_metadata = component['version']['metadata']
+        for key, value in metadata.dict().items():
+            self.logger.info('adding: {}::{} to metadata'.format(key, key))
+
+            version_metadata[key] = value
 
     def publish_thumbnail(self, component, render_task):
         ''' Generate thumbnail *component* for *render_task*. '''
@@ -1136,6 +1147,20 @@ class FtrackProcessorUI(FtrackBase):
         parent_layout.addRow(label + ':', self.asset_name_options_widget)
         self.asset_name_options_widget.update(True)
 
+    def add_metadata_options(self, parent_layout):
+        key, value, label = 'opt_publish_metadata', True, 'Publish clip metadata'
+        tooltip = 'Publish Clip metadata to ftrack server.'
+
+        self.thumbnail_options_widget = UIPropertyFactory.create(
+            type(value),
+            key=key,
+            value=value,
+            dictionary=self._preset.properties()['ftrack'],
+            label=label + ':',
+            tooltip=tooltip
+        )
+        parent_layout.addRow(label + ':', self.thumbnail_options_widget)
+
     def add_thumbnail_options(self, parent_layout):
         '''Create thumbnail options widget with parent *parent_layout*.'''
         # Thumbanil generation.
@@ -1218,6 +1243,7 @@ class FtrackProcessorUI(FtrackBase):
         self.add_asset_type_options(form_layout)
         self.add_asset_name_options(form_layout)
         self.add_thumbnail_options(form_layout)
+        self.add_metadata_options(form_layout)
         self.add_reviewable_options(form_layout)
         self.set_ui_tweaks()
 
