@@ -835,6 +835,10 @@ class FtrackProcessor(FtrackBase):
                 component['version'].encode_media(publish_path)
 
         if self._preset.properties()['ftrack'].get('opt_publish_metadata'):
+            has_clip = render_task._clip
+            if not has_clip:
+                return
+
             metadata = render_task._clip.mediaSource().metadata()
             self.publish_metadata(component, metadata)
 
@@ -1146,10 +1150,10 @@ class FtrackProcessorUI(FtrackBase):
         self.asset_name_options_widget.update(True)
 
     def add_metadata_options(self, parent_layout):
-        key, value, label = 'opt_publish_metadata', True, 'Publish clip metadata'
-        tooltip = 'Publish Clip metadata to ftrack server.'
+        key, value, label = 'opt_publish_metadata', True, 'Publish source metadata'
+        tooltip = 'Publish source metadata to ftrack server.'
 
-        self.thumbnail_options_widget = UIPropertyFactory.create(
+        self.metadata_options_widget = UIPropertyFactory.create(
             type(value),
             key=key,
             value=value,
@@ -1157,7 +1161,7 @@ class FtrackProcessorUI(FtrackBase):
             label=label + ':',
             tooltip=tooltip
         )
-        parent_layout.addRow(label + ':', self.thumbnail_options_widget)
+        parent_layout.addRow(label + ':', self.metadata_options_widget)
 
     def add_thumbnail_options(self, parent_layout):
         '''Create thumbnail options widget with parent *parent_layout*.'''
