@@ -844,8 +844,6 @@ class FtrackProcessor(FtrackBase):
     def publish_metadata(self, component, metadata):
         version_metadata = component['version']['metadata']
         for key, value in metadata.dict().items():
-            self.logger.info('adding: {}::{} to metadata'.format(key, key))
-
             version_metadata[key] = value
 
     def publish_thumbnail(self, component, render_task):
