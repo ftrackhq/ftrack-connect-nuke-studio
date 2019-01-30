@@ -7,6 +7,12 @@
 Release Notes
 *************
 
+.. release:: Upcoming
+
+    .. change:: new
+
+        Publish media sources metadata to version.
+
 .. release:: 2.1.2
     :date: 2019-01-17
 
