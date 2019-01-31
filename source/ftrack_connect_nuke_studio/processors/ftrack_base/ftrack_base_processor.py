@@ -1039,6 +1039,7 @@ class FtrackProcessorUI(FtrackBase):
         self.schema_options_widget = None
         self.task_type_options_widget = None
         self.asset_name_options_widget = None
+        self.metadata_options_widget = None
         self.thumbnail_options_widget = None
         self.reviewable_options_widget = None
         self.asset_type_options_widget = None
