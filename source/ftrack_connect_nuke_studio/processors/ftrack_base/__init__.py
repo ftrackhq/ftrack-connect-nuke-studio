@@ -8,7 +8,6 @@ from ftrack_connect_nuke_studio.base import FtrackBase
 from ftrack_connect_nuke_studio.template import match, get_project_template
 import ftrack_connect_nuke_studio.exception
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -211,30 +210,4 @@ class FtrackBasePreset(FtrackBase):
             'Ftrack component name in AssetVersion.',
             lambda keyword, task: self.resolve_ftrack_component(task)
         )
-
-        # Provide common resolver from ShotProcessorPreset
-        resolver.addResolver(
-            "{clip}",
-            "Name of the clip used in the shot being processed",
-            lambda keyword, task: task.clipName()
-        )
-
-        resolver.addResolver(
-            "{shot}",
-            "Name of the shot being processed",
-            lambda keyword, task: task.shotName()
-        )
-
-        resolver.addResolver(
-            "{track}",
-            "Name of the track being processed",
-            lambda keyword, task: task.trackName()
-        )
-
-        resolver.addResolver(
-            "{sequence}",
-            "Name of the sequence being processed",
-            lambda keyword, task: task.sequenceName()
-        )
-
 
