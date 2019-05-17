@@ -109,7 +109,7 @@ class FtrackNukeShotExporterPreset(NukeShotPreset, FtrackProcessorPreset):
         properties.setdefault('ftrack', {})
         # add placeholders for default ftrack defaults
         self.properties()['ftrack']['component_pattern'] = '.{ext}'
-        self.properties()['ftrack']['component_name'] = 'NukeScript'
+        self.properties()['ftrack']['component_name'] = 'NukeScript_{track}_{clip}'
         self.properties()['ftrack']['task_id'] = hash(self.__class__.__name__)
         self.properties()['ftrack']['reference_task'] = None
 

@@ -96,7 +96,7 @@ class FtrackNukeRenderExporterPreset(TranscodePreset, FtrackProcessorPreset):
 
         # add placeholders for default ftrack defaults
         self.properties()['ftrack']['component_pattern'] = '.####.{ext}'
-        self.properties()['ftrack']['component_name'] = 'Plate'
+        self.properties()['ftrack']['component_name'] = 'Plate_{track}_{clip}'
         self.properties()['ftrack']['task_id'] = hash(self.__class__.__name__)
 
     def addUserResolveEntries(self, resolver):

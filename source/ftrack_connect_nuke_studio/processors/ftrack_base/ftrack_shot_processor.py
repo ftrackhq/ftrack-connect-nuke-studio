@@ -118,9 +118,6 @@ class FtrackShotProcessorPreset(ShotProcessorPreset, FtrackProcessorPreset):
             lambda keyword, task: task.sequenceName()
         )
 
-
-
-
     def set_ftrack_properties(self, properties):
         '''Set ftrack specific *properties* for processor.'''
         FtrackProcessorPreset.set_ftrack_properties(self, properties)
@@ -128,7 +125,7 @@ class FtrackShotProcessorPreset(ShotProcessorPreset, FtrackProcessorPreset):
         self.properties()['ftrack']['task_type'] = 'Editing'
 
         # set asset name for processor
-        self.properties()['ftrack']['asset_name'] = '{track}'
+        self.properties()['ftrack']['asset_name'] = 'edit'
 
         # asset type for processor
         self.properties()['ftrack']['asset_type_name'] = 'Image Sequence'

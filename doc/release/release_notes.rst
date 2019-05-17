@@ -11,6 +11,10 @@ Release Notes
 
     .. change:: changed
 
+        Rename asset and components to cope by default with multitrack export.
+
+    .. change:: changed
+
         Replace simple EDL export with OpenTimelineIO edl export.
 
     .. change:: new
