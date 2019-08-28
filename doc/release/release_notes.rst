@@ -9,6 +9,30 @@ Release Notes
 
 .. release:: Upcoming
 
+    .. change:: fix
+       :tags: Internal
+
+        Thumbnail frame is now generated from the mid frame of the exported clip.
+
+.. release:: 2.2.2
+    :date: 2019-07-10
+
+    .. change:: changed
+       :tags: Internal
+
+        Replace QtExt module with QtPy.
+
+.. release:: 2.2.1
+    :date: 2019-05-22
+
+    .. change:: fixed
+
+        Tasks are marked as duplicated if the same clip name is present on multiple tracks.
+
+    .. change:: fixed
+
+        Tasks generate empty unwanted components.
+
     .. change:: changed
 
         Rename asset and components to cope by default with multitrack export.

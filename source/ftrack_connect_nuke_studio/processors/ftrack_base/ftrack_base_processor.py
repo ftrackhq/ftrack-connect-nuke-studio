@@ -9,7 +9,8 @@ import foundry.ui
 import uuid
 import hiero.core
 
-from QtExt import QtCore, QtWidgets, QtGui
+from qtpy import QtWidgets, QtCore, QtGui
+
 
 from hiero.ui.FnTaskUIFormLayout import TaskUIFormLayout
 from hiero.ui.FnUIProperty import UIPropertyFactory
@@ -558,6 +559,9 @@ class FtrackProcessor(FtrackBase):
                 )
 
                 task = hiero.core.taskRegistry.createTaskFromPreset(preset, taskData)
+                if not task.hasValidItem():
+                    continue
+
                 self._components[root_item][track_item.name()].setdefault(task.component_name(), {})
 
                 if getattr(task, '_nothingToDo', False) is True:
@@ -587,6 +591,7 @@ class FtrackProcessor(FtrackBase):
                     path.split(self.path_separator)
                 )
                 parent = None
+
                 for template, token in zipped_path_separator:
                     if (
                             not versions[path_id] and
@@ -739,6 +744,7 @@ class FtrackProcessor(FtrackBase):
 
     def setup_export_paths_event(self, task):
         ''' Event spawned when *task* start. '''
+
         try:
             root_item = task._item.parentTrack().name()
         except:
@@ -840,12 +846,23 @@ class FtrackProcessor(FtrackBase):
         )
         self.logger.debug('Publishing : {0}'.format(publish_path))
 
+        publish_thumbnail = self._preset.properties()['ftrack'].get(
+            'opt_publish_thumbnail'
+        )
+
+        publish_reviewable = self._preset.properties()['ftrack'].get(
+            'opt_publish_reviewable'
+        )
+
+        self.logger.info('Publish Thumbnail: {}'.format(publish_thumbnail))
+        self.logger.info('Publish Reviewable: {}'.format(publish_reviewable))
+
         # Add option to publish or not the thumbnail.
-        if self._preset.properties()['ftrack'].get('opt_publish_thumbnail'):
+        if publish_thumbnail:
             self.publish_thumbnail(component, render_task)
 
         # Add option to publish or not the reviewable.
-        if self._preset.properties()['ftrack'].get('opt_publish_reviewable'):
+        if publish_reviewable:
             _, ext = os.path.splitext(publish_path)
             if ext == '.mov':
                 component['version'].encode_media(publish_path)
@@ -857,9 +874,12 @@ class FtrackProcessor(FtrackBase):
         ''' Generate thumbnail *component* for *render_task*. '''
         source = render_task._clip
 
-        # TODO: pick frame from mid lenght clip or cut.
+        start, end = render_task.outputRange(clampToSource=False)
+        mid_frame = int(((end - start) / 2 ) + start)
 
-        thumbnail_qimage = source.thumbnail(source.posterFrame())
+        self.logger.info('setting poster frame to {} for {}'.format(mid_frame, source))
+
+        thumbnail_qimage = source.thumbnail(mid_frame)
         thumbnail_file = tempfile.NamedTemporaryFile(
             prefix='hiero_ftrack_thumbnail', suffix='.png', delete=False
         ).name
