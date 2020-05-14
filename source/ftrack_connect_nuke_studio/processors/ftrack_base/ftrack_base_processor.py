@@ -155,6 +155,10 @@ class FtrackProcessorPreset(FtrackBasePreset):
         '''Set ftrack specific *properties* for processor.'''
         super(FtrackProcessorPreset, self).set_ftrack_properties(properties)
 
+        # collate options
+        self.properties()['ftrack']['collate_tracks'] = False
+        self.properties()['ftrack']['collate_shot_names'] = False
+
 
 class FtrackProcessor(FtrackBase):
     '''Base Processor/task.'''
@@ -1243,6 +1247,34 @@ class FtrackProcessorUI(FtrackBase):
         parent_layout.addRow(label + ':', self.asset_type_options_widget)
         self.asset_type_options_widget.update(True)
 
+    def add_collate_options(self, parent_layout):
+        '''Create reviewable options widget with parent *parent_layout*.'''
+        key, value, label = 'collate_tracks', True, 'Collate Shot Timing'
+        tooltip = 'Collate overlapping timings'
+
+        self.reviewable_options_widget = UIPropertyFactory.create(
+            type(value),
+            key=key,
+            value=value,
+            dictionary=self._preset.properties()['ftrack'],
+            label=label + ':',
+            tooltip=tooltip
+        )
+        parent_layout.addRow(label + ':', self.reviewable_options_widget)
+
+        key, value, label = 'collate_shot_names', True, 'Collate Shot Names'
+        tooltip = 'Collate shots with same name'
+
+        self.reviewable_options_widget = UIPropertyFactory.create(
+            type(value),
+            key=key,
+            value=value,
+            dictionary=self._preset.properties()['ftrack'],
+            label=label + ':',
+            tooltip=tooltip
+        )
+        parent_layout.addRow(label + ':', self.reviewable_options_widget)
+
     def add_task_templates_options(self, parent_layout):
         ''' Create task template options widget with parent *parent_layout*.'''
         self.template_widget_options_widget = Template(self._project)
@@ -1272,6 +1304,7 @@ class FtrackProcessorUI(FtrackBase):
         self.add_task_type_options(form_layout, export_items)
         self.add_asset_type_options(form_layout)
         self.add_asset_name_options(form_layout)
+        self.add_collate_options(form_layout)
         self.set_ui_tweaks()
         return form_layout
 
